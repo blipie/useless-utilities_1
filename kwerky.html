@@ -9,33 +9,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen&family=Tahoma&display=swap" rel="stylesheet">
     <style>
-        /* --- Embedded Google Fonts Fix --- */
-        /* By embedding the @font-face rules directly, we avoid the cross-origin CSS request that was being blocked by ORB. */
-        /* Silkscreen */
-        @font-face {
-          font-family: 'Silkscreen';
-          font-style: normal;
-          font-weight: 400;
-          font-display: swap;
-          src: url(https://fonts.gstatic.com/s/silkscreen/v1/m8JXjfVf5J5e_Q62o4T8Y432.woff2) format('woff2');
-          unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-        }
-        /* Press Start 2P */
+        <style>
+        /* --- Local Font Loading Fix --- */
+        /* This @font-face rule tells the browser to load the font directly from your project folder. */
         @font-face {
           font-family: 'Press Start 2P';
-          font-style: normal;
-          font-weight: 400;
-          font-display: swap;
-          src: url(https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nxs9M.woff2) format('woff2');
-          unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+          src: url('./fonts/PressStart2P-Regular.ttf') format('truetype');
         }
-        /* Tahoma */
         @font-face {
-          font-family: 'Tahoma';
-          font-style: normal;
-          font-weight: 400;
-          font-display: swap;
-          src: local('Tahoma');
+          font-family: 'Silkscreen';
+          src: url('./fonts/Silkscreen-Regular.ttf') format('truetype');
         }
         /* --- End of Fix --- */
 
@@ -506,6 +489,7 @@
     </script>
 </body>
 </html>
+
 
 
 
