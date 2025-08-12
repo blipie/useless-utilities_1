@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Useless Utilities</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background-color: #008080;
+        }
+
+        /* --- Windows XP Pop-up Styles --- */
+        .xp-window {
+            width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid;
+            border-top-color: #d6d6ce; border-left-color: #d6d6ce; border-right-color: #404040; border-bottom-color: #404040;
+            background-color: #ece9d8; font-family: 'Tahoma', sans-serif;
+        }
+        .xp-title-bar {
+            background: linear-gradient(to right, #0058d0, #0080ff); padding: 4px 6px; font-weight: bold; color: white;
+            display: flex; justify-content: space-between; align-items: center; font-size: 14px; text-shadow: 1px 1px #000;
+        }
+        .xp-title-bar-buttons { display: flex; }
+        .xp-title-bar-buttons span {
+            display: inline-block; width: 22px; height: 20px; margin-left: 3px; border: 1px solid #fff;
+            box-shadow: 1px 1px 1px #000; text-align: center; line-height: 18px; font-family: 'Arial Black', sans-serif;
+            font-size: 12px; font-weight: bold; cursor: pointer; background-color: #d34b4b; color: white;
+        }
+        .xp-content { padding: 20px; text-align: left; min-height: 100px; }
+        .xp-button {
+            background-color: #f0f0f0; border: 1px solid; border-top-color: #fff; border-left-color: #fff;
+            border-right-color: #808080; border-bottom-color: #808080; padding: 8px 30px; font-size: 14px; cursor: pointer;
+        }
+        .xp-button:focus { outline: 1px dotted #000; outline-offset: -3px; }
+        .xp-button:active { border-top-color: #808080; border-left-color: #808080; border-right-color: #fff; border-bottom-color: #fff; }
+        .typing-cursor { display: inline-block; width: 8px; height: 1.2em; background-color: black; animation: blink 1s step-end infinite; vertical-align: bottom; }
+        @keyframes blink { from, to { background-color: transparent } 50% { background-color: black; } }
+
+        /* --- Authentic 1998 Google Styles --- */
+        .google-1998-body { background-color: #ffffff; font-family: Arial, sans-serif; }
+        .google-1998-logo { width: 351px; height: 113px; }
+        .search-input { width: 350px; border: 1px solid #000000; padding: 5px; font-size: 16px; }
+        .search-button { background-color: #f4f4f4; border: 1px solid #777; padding: 4px 10px; font-size: 14px; cursor: pointer; margin: 0 2px; }
+        .footer-table td { vertical-align: top; font-size: 12px; text-align: center; }
+
+        /* --- Search Animation & Results Page --- */
+        #search-animation-overlay { text-align: center; font-family: 'Courier New', Courier, monospace; }
+        .progress-bar { width: 300px; height: 20px; background-color: #c0c0c0; border: 2px inset #fff; padding: 2px; }
+        .progress-bar-inner { width: 0%; height: 100%; background-color: #000080; transition: width 2s linear; }
+        #search-results-page { font-family: Arial, sans-serif; background-color: #fff; padding: 20px; }
+        .search-result { margin-top: 20px; }
+        .search-result-title a { color: #0000FF; text-decoration: underline; font-size: 18px; }
+        .search-result-desc { color: #000000; font-size: 14px; }
+        .search-result-url { color: #008000; font-size: 14px; }
+    </style>
+</head>
+<body class="bg-gray-800">
+
+    <!-- Initial Windows XP Style Pop-up (Initially hidden) -->
+    <div id="xp-startup-popup" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+        <div class="xp-window">
+            <div class="xp-title-bar"><span>Useless Utilities</span><div class="xp-title-bar-buttons"><span class="xp-close">X</span></div></div>
+            <div class="xp-content text-center">
+                <p id="startup-text" class="text-lg text-gray-800 mb-6"></p>
+                <button id="enterButton" class="xp-button hidden">Enter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Pop-up for Instructions -->
+    <div id="instructions-popup" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-40 hidden">
+        <div class="xp-window">
+            <div class="xp-title-bar"><span id="instructions-title">Instructions</span><div class="xp-title-bar-buttons"><span id="closeInstructions" class="xp-close">X</span></div></div>
+            <div class="xp-content">
+                <p id="story-line-1" class="text-gray-800 text-sm"></p><p id="story-line-2" class="text-gray-800 text-sm mt-2"></p>
+                <div class="text-center"><button id="closeInstructionsButton" class="mt-6 xp-button hidden">Got it!</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main 1998-style Google Page (Initially Hidden) -->
+    <div id="main-page" class="google-1998-body min-h-screen flex-col items-center justify-center pt-12 hidden">
+        <img src="https://web.archive.org/web/19990508041355im_/http://www.google.com/google.jpg" alt="Google 1998 Logo" class="google-1998-logo mb-4" onerror="this.onerror=null;this.src='https://placehold.co/351x113/ffffff/000000?text=Google!%20(1998)';">
+        <form id="search-form" class="text-center">
+            <div class="bg-white p-1 inline-block"><p class="text-sm">Search the web using Google!</p><input type="text" id="search-input" class="search-input my-1" value="how to make something cool">
+                <div class="mt-1"><button type="submit" class="search-button">Google Search</button><button type="button" class="search-button">I'm Feeling Lucky</button></div>
+            </div>
+        </form>
+        <table class="footer-table mt-4 w-[80%] max-w-3xl">
+            <tbody>
+                <tr><td class="w-1/3 bg-[#7EE5DA] p-1"><a href="#" class="block">Special Searches</a><a href="#" class="block">Stanford Search</a><a href="#" class="block">Linux Search</a></td><td class="w-1/3 bg-[#70CCC2] p-1"><a href="#" class="block">Help!</a><a href="#" class="block">About Google!</a><a href="#" class="block">Company Info</a><a href="#" class="block">Google! Logos</a></td><td class="w-1/3 bg-[#62B3AA] p-1"><p>Get Google!</p><p>updates monthly:</p><input type="email" placeholder="your e-mail" class="w-[90%] border border-black my-1 text-xs p-1"><div><button class="search-button text-xs">Subscribe</button><a href="#" class="ml-2">Archive</a></div></td></tr>
+            </tbody>
+        </table><p class="text-xs mt-2">Copyright ©1998 Google Inc.</p>
+    </div>
+
+    <!-- Search Animation Overlay -->
+    <div id="search-animation-overlay" class="fixed inset-0 bg-white flex-col items-center justify-center z-30 hidden">
+        <p class="text-xl mb-4">Searching...</p>
+        <div class="progress-bar"><div id="progress-bar-inner" class="progress-bar-inner"></div></div>
+    </div>
+
+    <!-- Search Results Page -->
+    <div id="search-results-page" class="min-h-screen hidden">
+        <div class="bg-gray-200 p-2 border-b border-gray-400 flex items-center">
+            <img src="https://web.archive.org/web/19990508041355im_/http://www.google.com/google.jpg" alt="Google Logo" class="h-8 mr-4" onerror="this.onerror=null;this.src='https://placehold.co/100x35/ffffff/000000?text=Google!';">
+            <input type="text" id="results-search-term" class="search-input w-96" readonly><button class="search-button ml-2">Google Search</button>
+        </div>
+        <div class="p-4 text-sm">Web-page results for <b id="results-search-term-display"></b>. Results 1-1 of 1. Search took 0.12 seconds.</div>
+        <div class="search-result px-4">
+            <h3 class="search-result-title"><a href="/kwerky.html">kwerky.ai - Get Stacked Creative Ideas</a></h3>
+            <p class="search-result-desc">Unleash your genius with kwerky.ai. We provide you with an absolutely stacked creative pilled idea for hackathons, projects, and more... at a small price.</p>
+            <p class="search-result-url">https://kwerky.ai/</p>
+        </div>
+    </div>
+
+    <script>
+        // --- Element References ---
+        const enterButton = document.getElementById('enterButton');
+        const xpStartupPopup = document.getElementById('xp-startup-popup');
+        const startupText = document.getElementById('startup-text');
+        const instructionsPopup = document.getElementById('instructions-popup');
+        const instructionsTitle = document.getElementById('instructions-title');
+        const closeInstructionsButton = document.getElementById('closeInstructionsButton');
+        const closeInstructionsIcon = document.getElementById('closeInstructions');
+        const mainPage = document.getElementById('main-page');
+        const storyLine1 = document.getElementById('story-line-1');
+        const storyLine2 = document.getElementById('story-line-2');
+        const searchForm = document.getElementById('search-form');
+        const searchInput = document.getElementById('search-input');
+        const searchAnimationOverlay = document.getElementById('search-animation-overlay');
+        const progressBarInner = document.getElementById('progress-bar-inner');
+        const searchResultsPage = document.getElementById('search-results-page');
+        const resultsSearchTerm = document.getElementById('results-search-term');
+        const resultsSearchTermDisplay = document.getElementById('results-search-term-display');
+
+        // --- State and Config ---
+        const randomTitles = ["A Wild Idea Appears", "System Message", "Note to Self", "Brain Activity", "Useless Thought"];
+        const storyTextStartup = "You're at the entrance of Tinkerspace kochi for attending a hackathon - Useless Projects";
+        const storyText1 = "You enter the building and open up your machine to create something useless...";
+        const storyText2 = "but you're not feeling especially creative today, so you head to google";
+        let typingInterval;
+
+        // --- Sound Synthesis (Tone.js) ---
+        let soundsReady = false;
+        const popupSound = new Tone.Synth().toDestination();
+        const typeSound = new Tone.Synth({ oscillator: { type: 'square' }, volume: -20, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.1 } }).toDestination();
+        const clickSound = new Tone.Synth({ volume: -10 }).toDestination();
+        
+        // --- Functions ---
+        function typeWriter(element, text, speed, onComplete) {
+            let i = 0;
+            element.innerHTML = '<span class="typing-cursor"></span>';
+            const cursor = element.querySelector('.typing-cursor');
+            if(typingInterval) clearInterval(typingInterval);
+
+            typingInterval = setInterval(() => {
+                if (i < text.length) {
+                    cursor.insertAdjacentText('beforebegin', text.charAt(i));
+                    if (soundsReady) typeSound.triggerAttackRelease('G2', '32n');
+                    i++;
+                } else {
+                    clearInterval(typingInterval);
+                    if(cursor) cursor.style.display = 'none';
+                    if (onComplete) onComplete();
+                }
+            }, speed);
+        }
+        
+        const closeInstructions = () => {
+            clearInterval(typingInterval);
+            instructionsPopup.style.display = 'none';
+        };
+
+        const startSearch = (e) => {
+            e.preventDefault();
+            mainPage.style.display = 'none';
+            searchAnimationOverlay.style.display = 'flex';
+            setTimeout(() => { progressBarInner.style.width = '100%'; }, 100);
+            setTimeout(() => {
+                searchAnimationOverlay.style.display = 'none';
+                const searchTerm = searchInput.value;
+                resultsSearchTerm.value = searchTerm;
+                resultsSearchTermDisplay.textContent = `"${searchTerm}"`;
+                searchResultsPage.style.display = 'block';
+            }, 2100);
+        };
+
+        const playClickSound = () => {
+            if (soundsReady) {
+                clickSound.triggerAttackRelease("G3", "32n");
+            }
+        };
+
+        const playPopupSound = () => {
+             if (soundsReady) {
+                popupSound.triggerAttackRelease("E4", "16n");
+            }
+        }
+
+        const initializeAudio = async () => {
+            if (!soundsReady) {
+                await Tone.start();
+                soundsReady = true;
+                console.log('Audio context started');
+            }
+        };
+
+        // --- Event Listeners ---
+        window.onload = () => {
+            // Wait 0.5 seconds, then show the first pop-up
+            setTimeout(() => {
+                xpStartupPopup.classList.remove('hidden');
+                // Start typing animation visually. Sound will be enabled after the first user click.
+                typeWriter(startupText, storyTextStartup, 60, () => {
+                    enterButton.classList.remove('hidden');
+                });
+            }, 500);
+        };
+
+        enterButton.addEventListener('click', () => {
+            // This is the first user interaction, so we initialize audio here.
+            initializeAudio().then(() => {
+                playClickSound(); // Play only the click sound.
+                // REMOVED: The pop-up sound from here.
+                xpStartupPopup.style.display = 'none';
+                mainPage.style.display = 'flex';
+                
+                // Wait 1 second before showing the next pop-up
+                setTimeout(() => {
+                    playPopupSound(); // Play the pop-up sound as the window appears.
+                    instructionsTitle.textContent = randomTitles[Math.floor(Math.random() * randomTitles.length)];
+                    instructionsPopup.style.display = 'flex';
+                    closeInstructionsButton.classList.add('hidden');
+                    // This typing animation will have sound because audio is now initialized
+                    typeWriter(storyLine1, storyText1, 60, () => {
+                        typeWriter(storyLine2, storyText2, 60, () => {
+                            closeInstructionsButton.classList.remove('hidden');
+                        });
+                    });
+                }, 1000);
+            });
+        });
+        
+        // This listener ensures subsequent clicks also make a sound.
+        document.querySelectorAll('button:not(#enterButton), .xp-close').forEach(button => {
+            button.addEventListener('click', playClickSound);
+        });
+
+        closeInstructionsButton.addEventListener('click', closeInstructions);
+        closeInstructionsIcon.addEventListener('click', closeInstructions);
+        
+        document.querySelector('#xp-startup-popup .xp-close').addEventListener('click', () => {
+             xpStartupPopup.style.display = 'none';
+        });
+
+        searchForm.addEventListener('submit', startSearch);
+
+    </script>
+</body>
+</html>

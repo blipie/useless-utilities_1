@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual L-System Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Added Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .scrollable-panel {
+            overflow-y: auto;
+        }
+        .mono-font {
+            font-family: 'Roboto Mono', monospace;
+        }
+        canvas {
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            transition: border-color 0.3s;
+        }
+        .rule-token {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.5rem;
+            margin: 0.125rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: default;
+            transition: background-color 0.2s;
+        }
+        [contenteditable]:focus {
+            outline: none;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* Style for color input */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+        }
+        .collapsible-content {
+            display: none;
+            transition: max-height 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        .collapsible-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+
+        /* --- Dark Mode Styles --- */
+        body.dark { background-color: #1e293b; color: #cbd5e1; }
+        .dark .bg-white { background-color: #334155; }
+        .dark .text-slate-900, .dark .text-slate-800, .dark .text-slate-700, .dark .text-slate-600 { color: #e2e8f0; }
+        .dark .border-slate-200 { border-color: #475569; }
+        .dark .bg-slate-50 { background-color: #334155; }
+        .dark .bg-slate-100 { background-color: #1e293b; }
+        .dark .bg-slate-800 { background-color: #0f172a; }
+        .dark .text-slate-100 { color: #f1f5f9; }
+        .dark .home-icon, .dark a { color: #e2e8f0; }
+        .dark canvas { border-color: #475569; }
+        .dark .collapsible-header { border-top-color: #475569; }
+        .dark .bg-blue-100 { background-color: #1e40af; }
+        .dark .text-blue-800 { color: #eff6ff; }
+        .dark .bg-slate-200 { background-color: #475569; }
+        .dark .hover\:bg-slate-300:hover { background-color: #64748b; }
+        .dark .border-slate-300 { border-color: #64748b; }
+        .dark .bg-gray-300 { background-color: #475569; }
+        .dark .toggle-checkbox { background-color: #334155; border-color: #64748b; }
+        .dark .toggle-checkbox:checked { border-color: #3b82f6; }
+        .dark .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+        .dark .modal-body-display { background-color: #475569; border-color: #64748b; }
+        .dark .modal-shape-select, .dark .modal-variable-input-add { background-color: #475569; border-color: #64748b; color: #e2e8f0; }
+        .dark #plant-popup .bg-white { background-color: #334155; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col">
+
+    <div class="container mx-auto p-4 lg:p-8 flex flex-col flex-grow min-h-0">
+        <header class="text-center mb-4 flex-shrink-0 relative">
+             <a href="/kwerky.html" class="absolute top-0 left-0 text-slate-500 hover:text-blue-600 transition-colors home-icon" title="Go to Home">
+                <span class="material-icons" style="font-size: 36px;">home</span>
+            </a>
+            <h1 class="text-3xl font-bold text-slate-900">Visual L-System Generator</h1>
+            <p class="text-slate-600 mt-1">Visually build rules to create fractal patterns with animation.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow min-h-0 h-full">
+            
+            <!-- SECTION A: Core Creation Tools -->
+            <div class="lg:col-span-3 bg-white p-4 rounded-2xl shadow-lg border border-slate-200 flex flex-col">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 flex-shrink-0">Creation Tools</h2>
+                <div class="scrollable-panel flex-grow pr-2 min-h-0">
+                    <div class="space-y-4">
+                        <!-- Preset Loader -->
+                        <div>
+                            <label for="preset-select" class="block text-sm font-medium text-slate-700 mb-2">Load a Preset</label>
+                            <select id="preset-select" class="w-full p-2 border border-slate-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+                        <!-- Axiom Display -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Axiom (Start)</label>
+                            <div id="axiom-list-container">
+                            </div>
+                        </div>
+
+                        <!-- Rule List Display -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Rules</label>
+                            <div id="rule-list-container" class="space-y-2">
+                            </div>
+                            <button id="add-rule-btn" class="mt-4 w-full bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 plays-sound">
+                                + Add New Rule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                 <!-- Action Buttons (Fixed at bottom) -->
+                <div class="grid grid-cols-2 gap-2 pt-4 border-t mt-auto flex-shrink-0">
+                    <button id="draw-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-md hover:shadow-lg plays-sound">
+                        Draw
+                    </button>
+                    <button id="animate-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-md hover:show-lg plays-sound">
+                        Animate
+                    </button>
+                    <button id="fit-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 shadow-md hover:shadow-lg plays-sound">
+                        Fit to View
+                    </button>
+                    <button id="clear-btn" class="bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-all duration-200 plays-sound">
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION B: Canvas -->
+            <div class="lg:col-span-6 bg-white rounded-2xl shadow-lg border border-slate-200 flex flex-col">
+                <div id="canvas-container" class="w-full flex-grow min-h-0 rounded-t-2xl">
+                    <canvas id="lsystem-canvas" class="w-full h-full"></canvas>
+                </div>
+                <div class="p-4 bg-slate-100 rounded-b-2xl flex-shrink-0">
+                    <h3 class="text-sm font-semibold text-slate-600">Generated String:</h3>
+                    <div class="mt-2 p-3 bg-slate-800 text-slate-100 rounded-md max-h-24 overflow-y-auto mono-font text-xs">
+                        <code id="output-string">Press "Draw" or "Animate" to create an L-System.</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION C: Fine-Tuning Controls -->
+            <div class="lg:col-span-3 bg-white p-4 rounded-2xl shadow-lg border border-slate-200 flex flex-col">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 flex-shrink-0">Drawing Settings</h2>
+                 <div class="scrollable-panel flex-grow pr-2 min-h-0">
+                    <div class="space-y-4">
+                        <!-- Dark Mode Toggle -->
+                        <div class="flex items-center justify-between">
+                            <label for="dark-mode-toggle" class="text-sm font-medium text-slate-700">Dark Mode</label>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="dark-mode-toggle" id="dark-mode-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                <label for="dark-mode-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                            </div>
+                        </div>
+                        <!-- Auto-Generate Toggle -->
+                        <div class="flex items-center justify-between">
+                            <label for="auto-generate-toggle" class="text-sm font-medium text-slate-700">Auto-Draw</label>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="auto-generate-toggle" id="auto-generate-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                <label for="auto-generate-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                            </div>
+                        </div>
+                        <!-- Iterations, Angle, Length -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="iterations" class="text-sm font-medium text-slate-700">Iterations</label>
+                                <input type="number" id="iterations-number" value="5" min="0" max="8" class="w-20 p-1 text-center border border-slate-300 rounded-md mono-font">
+                            </div>
+                            <input type="range" id="iterations" min="0" max="8" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="angle" class="text-sm font-medium text-slate-700">Angle</label>
+                                <input type="number" id="angle-number" value="25" min="0" max="180" class="w-20 p-1 text-center border border-slate-300 rounded-md mono-font">
+                            </div>
+                            <input type="range" id="angle" min="0" max="180" value="25" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                           <div class="flex justify-between items-center mb-1">
+                                <label for="length" class="text-sm font-medium text-slate-700">Line Length</label>
+                                <input type="number" id="length-number" value="5" min="1" max="50" class="w-20 p-1 text-center border border-slate-300 rounded-md mono-font">
+                            </div>
+                            <input type="range" id="length" min="1" max="50" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        
+                        <!-- Animation Controls -->
+                        <div class="pt-4 border-t">
+                            <button class="w-full text-left collapsible-header plays-sound">
+                                <h3 class="text-lg font-semibold text-slate-800 flex justify-between items-center">
+                                    <span>Animation</span>
+                                    <svg class="collapsible-arrow w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </h3>
+                            </button>
+                            <div class="collapsible-content mt-3">
+                                <div>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label for="speed" class="text-sm font-medium text-slate-700">Animation Speed</label>
+                                        <input type="number" id="speed-number" value="50" min="1" max="1000" class="w-20 p-1 text-center border border-slate-300 rounded-md mono-font">
+                                    </div>
+                                    <input type="range" id="speed" min="1" max="1000" value="50" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Color Controls -->
+                        <div class="pt-4 border-t">
+                            <button class="w-full text-left collapsible-header plays-sound">
+                                <h3 class="text-lg font-semibold text-slate-800 flex justify-between items-center">
+                                    <span>Colors</span>
+                                    <svg class="collapsible-arrow w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </h3>
+                            </button>
+                            <div class="collapsible-content mt-3">
+                                <div class="flex justify-around items-center">
+                                    <div class="text-center">
+                                        <label for="line-color" class="block text-sm font-medium text-slate-700 mb-2">Line Color</label>
+                                        <input type="color" id="line-color" value="#1e2b3b">
+                                    </div>
+                                    <div class="text-center">
+                                        <label for="shape-color" class="block text-sm font-medium text-slate-700 mb-2">Shape Color</label>
+                                        <input type="color" id="shape-color" value="#ef4444">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Start Position Variables -->
+                        <div class="pt-4 border-t">
+                             <button class="w-full text-left collapsible-header plays-sound">
+                                <h3 class="text-lg font-semibold text-slate-800 flex justify-between items-center">
+                                    <span>Initial State</span>
+                                    <svg class="collapsible-arrow w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </h3>
+                            </button>
+                            <div class="collapsible-content mt-3 space-y-4">
+                                <div>
+                                    <label for="startX" class="block text-sm font-medium text-slate-700 mb-1">Start X: <span id="startX-value" class="font-bold text-blue-600">50</span>%</label>
+                                    <input type="range" id="startX" min="0" max="100" value="50" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <label for="startY" class="block text-sm font-medium text-slate-700 mb-1">Start Y: <span id="startY-value" class="font-bold text-blue-600">100</span>%</label>
+                                    <input type="range" id="startY" min="0" max="100" value="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <label for="startAngle" class="block text-sm font-medium text-slate-700 mb-1">Start Angle: <span id="startAngle-value" class="font-bold text-blue-600">-90</span>°</label>
+                                    <input type="range" id="startAngle" min="-180" max="180" value="-90" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Rule Editor Modal -->
+    <div id="rule-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
+            <h3 id="modal-title" class="text-xl font-bold mb-4">Edit Rule</h3>
+            <div class="space-y-4">
+                <div id="modal-variable-container" class="flex items-center gap-2">
+                    <label class="font-medium">Replace</label>
+                    <input type="text" id="modal-variable-input" maxlength="1" class="mono-font w-12 p-1 text-center border border-slate-300 rounded-md">
+                    <label class="font-medium">with:</label>
+                </div>
+                <div id="modal-body-display" class="min-h-[40px] bg-white border border-slate-300 rounded-md p-1 flex flex-wrap items-center"></div>
+                <div id="modal-controls" class="grid grid-cols-4 gap-2 text-sm">
+                    <button data-action="F" class="bg-slate-200 hover:bg-slate-300 p-1 rounded plays-sound">Grow (F)</button>
+                    <button data-action="[" class="bg-slate-200 hover:bg-slate-300 p-1 rounded plays-sound">Branch [</button>
+                    <button data-action="]" class="bg-slate-200 hover:bg-slate-300 p-1 rounded plays-sound">Branch ]</button>
+                    <button data-action="backspace" class="bg-red-200 hover:bg-red-300 text-red-800 p-1 rounded plays-sound">Backspace</button>
+                    <button data-action="+" class="bg-slate-200 hover:bg-slate-300 p-1 rounded plays-sound">Turn +</button>
+                    <button data-action="-" class="bg-slate-200 hover:bg-slate-300 p-1 rounded plays-sound">Turn -</button>
+                    <select class="modal-shape-select bg-slate-200 hover:bg-slate-300 p-1 rounded col-span-2 plays-sound">
+                        <option value="">Add Shape...</option>
+                        <option value="O">Circle (O)</option>
+                        <option value="S">Square (S)</option>
+                        <option value="T">Triangle (T)</option>
+                        <option value="D">Diamond (D)</option>
+                        <option value="W">Star (W)</option>
+                        <option value="L">Leaf (L)</option>
+                        <option value="M">Lobed Leaf (M)</option>
+                    </select>
+                    <div class="flex items-center col-span-4 gap-1">
+                        <input type="text" placeholder="Var" class="modal-variable-input-add mono-font w-12 p-1 text-center border border-slate-300 rounded-md" maxlength="1">
+                        <button class="modal-add-variable-btn bg-blue-200 hover:bg-blue-300 p-1 rounded w-full plays-sound">Add Var</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="modal-cancel-btn" class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 plays-sound">Cancel</button>
+                <button id="modal-save-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 plays-sound">Save Rule</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Special Fractal Plant Popup -->
+    <div id="plant-popup" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 class="text-xl font-bold mb-4">Animation Complete!</h3>
+            <p class="text-slate-600 mb-6">You've generated the Fractal Plant. What would you like to do next?</p>
+            <div class="flex justify-center gap-4">
+                <button id="popup-tasks-btn" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 plays-sound">Tasks</button>
+                <button id="popup-lsystem-btn" class="bg-slate-200 text-slate-800 font-semibold py-2 px-6 rounded-lg hover:bg-slate-300 plays-sound">L-System</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const canvas = document.getElementById('lsystem-canvas');
+            const canvasContainer = document.getElementById('canvas-container');
+            const ctx = canvas.getContext('2d');
+            const presetSelect = document.getElementById('preset-select');
+            const axiomListContainer = document.getElementById('axiom-list-container');
+            const iterationsInput = document.getElementById('iterations');
+            const iterationsNumber = document.getElementById('iterations-number');
+            const angleInput = document.getElementById('angle');
+            const angleNumber = document.getElementById('angle-number');
+            const lengthInput = document.getElementById('length');
+            const lengthNumber = document.getElementById('length-number');
+            const speedInput = document.getElementById('speed');
+            const speedNumber = document.getElementById('speed-number');
+            const lineColorInput = document.getElementById('line-color');
+            const shapeColorInput = document.getElementById('shape-color');
+            const startXInput = document.getElementById('startX');
+            const startYInput = document.getElementById('startY');
+            const startAngleInput = document.getElementById('startAngle');
+            const startXValue = document.getElementById('startX-value');
+            const startYValue = document.getElementById('startY-value');
+            const startAngleValue = document.getElementById('startAngle-value');
+            const drawBtn = document.getElementById('draw-btn');
+            const animateBtn = document.getElementById('animate-btn');
+            const fitBtn = document.getElementById('fit-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const outputStringEl = document.getElementById('output-string');
+            const ruleListContainer = document.getElementById('rule-list-container');
+            const addRuleBtn = document.getElementById('add-rule-btn');
+            const autoGenerateToggle = document.getElementById('auto-generate-toggle');
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+            // Modal elements
+            const ruleModal = document.getElementById('rule-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalVariableContainer = document.getElementById('modal-variable-container');
+            const modalVariableInput = document.getElementById('modal-variable-input');
+            const modalBodyDisplay = document.getElementById('modal-body-display');
+            const modalControls = document.getElementById('modal-controls');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+            const modalSaveBtn = document.getElementById('modal-save-btn');
+            
+            // Special popup elements
+            const plantPopup = document.getElementById('plant-popup');
+            const popupTasksBtn = document.getElementById('popup-tasks-btn');
+            const popupLsystemBtn = document.getElementById('popup-lsystem-btn');
+
+            // --- Sound Synthesis ---
+            const synth = new Tone.Synth().toDestination();
+            const playClickSound = () => {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                synth.triggerAttackRelease("C1", "32n");
+            };
+            
+            document.body.addEventListener('click', (e) => {
+                if (e.target.closest('.plays-sound')) {
+                    playClickSound();
+                }
+            });
+            presetSelect.addEventListener('change', playClickSound);
+
+
+            // --- State Management ---
+            let currentSystemString = '';
+            let lastDrawParams = {};
+            let currentlyEditingRuleId = null;
+            let animationFrameId = null;
+            let animationState = {};
+            let axiom = '';
+            let rules = []; // Use an array of objects for rules: [{id, variable, body}]
+            
+            // --- Preset Data ---
+            const presets = {
+                'Fractal Plant': { axiom: 'A', rules: { 'A': 'F[+A][-A]FL', 'F': 'FF' }, iterations: 5, angle: 25 },
+                'Seaweed': { axiom: 'F', rules: { 'F': 'FF-[-F+F+F]+[+F-F-F]' }, iterations: 4, angle: 22.5 },
+                'Simple Bush': { axiom: 'F', rules: { 'F': 'F[+F]F[-F]F' }, iterations: 4, angle: 25.7 },
+                'Windswept Tree': { axiom: 'F', rules: { 'F': 'F[+F]F[-F[--F]]' }, iterations: 4, angle: 20 },
+                'Weeping Willow': { axiom: 'X', rules: { 'X': 'F-[[X]+X]+F[+FX]-X', 'F': 'FF' }, iterations: 5, angle: 22.5 },
+                'Blooming Flower': { axiom: 'X', rules: { 'X': 'F[+X][-X]FX', 'F': 'FF' }, iterations: 6, angle: 30 },
+                'Dragon Curve': { axiom: 'FX', rules: { 'X': 'X+YF+', 'Y': '-FX-Y' }, iterations: 10, angle: 90 },
+                'Hilbert Curve': { axiom: 'A', rules: { 'A': '-BF+AFA+FB-', 'B': '+AF-BFB-FA+' }, iterations: 5, angle: 90 },
+                'Custom': { axiom: 'F', rules: {}, iterations: 4, angle: 90 }
+            };
+
+            // --- Debounce for Auto-Draw ---
+            let debounceTimer;
+            const debounce = (func, delay) => {
+                return function(...args) {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        func.apply(this, args);
+                    }, delay);
+                };
+            };
+            
+            const handleAutoGenerate = debounce(() => {
+                if (autoGenerateToggle.checked) {
+                    drawBtn.click();
+                }
+            }, 400);
+
+            // --- Generic Token Rendering ---
+            const renderTokens = (displayElement, bodyString) => {
+                displayElement.innerHTML = '';
+                for (const char of bodyString) {
+                    const token = document.createElement('span');
+                    token.textContent = char;
+                    token.className = 'rule-token';
+                    let color = 'bg-slate-200 text-slate-800'; // Default
+                    if (/[A-Z]/.test(char) && 'FG'.indexOf(char) === -1 && 'OSTDWLM'.indexOf(char) === -1) {
+                        color = 'bg-blue-200 text-blue-800'; // Variable
+                    } else if ('FG'.includes(char)) {
+                        color = 'bg-green-200 text-green-800'; // Grow
+                    } else if ('+-'.includes(char)) {
+                        color = 'bg-yellow-200 text-yellow-800'; // Turn
+                    } else if ('[]'.includes(char)) {
+                        color = 'bg-purple-200 text-purple-800'; // Branch
+                    } else if ('OSTDWLM'.includes(char)) {
+                        color = 'bg-red-200 text-red-800'; // Shape
+                    }
+                    token.classList.add(...color.split(' '));
+                    displayElement.appendChild(token);
+                }
+            };
+            
+            // --- Paste Handler ---
+            const handlePaste = (event, displayElement, updateCallback) => {
+                event.preventDefault();
+                const pastedText = event.clipboardData.getData('text/plain');
+                const sanitizedText = pastedText.replace(/[^A-ZFG+\-\[\]OSTDWLM]/gi, '').toUpperCase();
+                updateCallback(displayElement.dataset.body + sanitizedText);
+            };
+
+            // --- RENDER FUNCTIONS (Single Source of Truth) ---
+            function renderSystem() {
+                // Render Axiom
+                axiomListContainer.innerHTML = '';
+                const axiomDiv = document.createElement('div');
+                axiomDiv.id = 'axiom-display-item';
+                axiomDiv.className = 'rule-display-item bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between';
+                const axiomContent = document.createElement('div');
+                axiomContent.className = 'flex items-center gap-2 overflow-hidden';
+                const axiomBodyPreview = document.createElement('div');
+                axiomBodyPreview.className = 'flex-nowrap flex overflow-hidden whitespace-nowrap';
+                renderTokens(axiomBodyPreview, axiom);
+                axiomContent.appendChild(axiomBodyPreview);
+                const axiomEditBtn = document.createElement('button');
+                axiomEditBtn.className = 'edit-axiom-btn text-slate-500 hover:text-blue-600 ml-auto plays-sound';
+                axiomEditBtn.textContent = 'Edit';
+                axiomEditBtn.addEventListener('click', () => {
+                    openRuleModal({ id: 'axiom', body: axiom });
+                });
+                axiomDiv.appendChild(axiomContent);
+                axiomDiv.appendChild(axiomEditBtn);
+                axiomListContainer.appendChild(axiomDiv);
+
+                // Render Rules
+                ruleListContainer.innerHTML = '';
+                rules.forEach(rule => {
+                    const ruleDiv = document.createElement('div');
+                    ruleDiv.id = rule.id;
+                    ruleDiv.className = 'rule-display-item bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between';
+                    const content = document.createElement('div');
+                    content.className = 'flex items-center gap-2 overflow-hidden';
+                    content.innerHTML = `<span class="rule-variable font-bold mono-font text-blue-600">${rule.variable}</span> <span class="text-slate-400">&rarr;</span>`;
+                    const bodyPreview = document.createElement('div');
+                    bodyPreview.className = 'rule-body-preview flex-nowrap flex overflow-hidden whitespace-nowrap';
+                    renderTokens(bodyPreview, rule.body);
+                    content.appendChild(bodyPreview);
+                    const buttons = document.createElement('div');
+                    buttons.className = 'flex items-center gap-2 flex-shrink-0 ml-2';
+                    buttons.innerHTML = `
+                        <button class="edit-rule-btn text-slate-500 hover:text-blue-600 plays-sound">Edit</button>
+                        <button class="delete-rule-btn text-slate-500 hover:text-red-600 font-bold plays-sound">&times;</button>
+                    `;
+                    buttons.querySelector('.edit-rule-btn').addEventListener('click', () => {
+                        openRuleModal({ id: rule.id, variable: rule.variable, body: rule.body });
+                    });
+                    buttons.querySelector('.delete-rule-btn').addEventListener('click', () => {
+                        rules = rules.filter(r => r.id !== rule.id);
+                        renderSystem();
+                        handleAutoGenerate();
+                    });
+                    ruleDiv.appendChild(content);
+                    ruleDiv.appendChild(buttons);
+                    ruleListContainer.appendChild(ruleDiv);
+                });
+            }
+
+            // --- Rule Modal Logic ---
+            const openRuleModal = ({ id = null, variable = '', body = '' } = {}) => {
+                currentlyEditingRuleId = id;
+
+                if (id === 'axiom') {
+                    modalTitle.textContent = 'Edit Axiom';
+                    modalVariableContainer.classList.add('hidden');
+                } else {
+                    modalTitle.textContent = id ? 'Edit Rule' : 'Add New Rule';
+                    modalVariableContainer.classList.remove('hidden');
+                    modalVariableInput.value = variable;
+                }
+                
+                modalBodyDisplay.dataset.body = body;
+                renderTokens(modalBodyDisplay, body);
+                ruleModal.classList.remove('hidden');
+                ruleModal.classList.add('flex');
+            };
+
+            const closeRuleModal = () => {
+                ruleModal.classList.add('hidden');
+                ruleModal.classList.remove('flex');
+                currentlyEditingRuleId = null;
+            };
+
+            modalControls.querySelectorAll('button[data-action]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const action = btn.dataset.action;
+                    let currentBody = modalBodyDisplay.dataset.body || '';
+                    if (action === 'backspace') {
+                        currentBody = currentBody.slice(0, -1);
+                    } else {
+                        currentBody += action;
+                    }
+                    modalBodyDisplay.dataset.body = currentBody;
+                    renderTokens(modalBodyDisplay, currentBody);
+                });
+            });
+
+            modalControls.querySelector('.modal-add-variable-btn').addEventListener('click', () => {
+                const varInput = modalControls.querySelector('.modal-variable-input-add');
+                if (varInput.value) {
+                    let currentBody = modalBodyDisplay.dataset.body || '';
+                    currentBody += varInput.value.toUpperCase();
+                    modalBodyDisplay.dataset.body = currentBody;
+                    renderTokens(modalBodyDisplay, currentBody);
+                    varInput.value = '';
+                }
+            });
+
+            modalControls.querySelector('.modal-shape-select').addEventListener('change', (e) => {
+                if (e.target.value) {
+                    let currentBody = modalBodyDisplay.dataset.body || '';
+                    currentBody += e.target.value;
+                    modalBodyDisplay.dataset.body = currentBody;
+                    renderTokens(modalBodyDisplay, currentBody);
+                    e.target.value = '';
+                }
+            });
+            
+            modalBodyDisplay.addEventListener('paste', (e) => handlePaste(e, modalBodyDisplay, (newBody) => {
+                modalBodyDisplay.dataset.body = newBody;
+                renderTokens(modalBodyDisplay, newBody);
+            }));
+
+            modalCancelBtn.addEventListener('click', closeRuleModal);
+
+            modalSaveBtn.addEventListener('click', () => {
+                const body = modalBodyDisplay.dataset.body || '';
+                
+                if (currentlyEditingRuleId === 'axiom') {
+                    axiom = body;
+                } else {
+                    const variable = modalVariableInput.value.toUpperCase();
+                    if (!variable) return;
+
+                    const ruleIndex = rules.findIndex(r => r.id === currentlyEditingRuleId);
+                    if (ruleIndex > -1) {
+                        // Editing existing rule
+                        rules[ruleIndex] = { ...rules[ruleIndex], variable, body };
+                    } else {
+                        // Adding new rule
+                        rules.push({ id: `rule-${Date.now()}`, variable, body });
+                    }
+                }
+                renderSystem();
+                closeRuleModal();
+                handleAutoGenerate();
+            });
+
+            addRuleBtn.addEventListener('click', () => openRuleModal({}));
+            
+            // --- L-System Logic ---
+            function generateLSystemString() {
+                const iterations = parseInt(iterationsInput.value, 10);
+                const rulesMap = rules.reduce((map, rule) => {
+                    map[rule.variable] = rule.body;
+                    return map;
+                }, {});
+
+                let currentString = axiom;
+                for (let i = 0; i < iterations; i++) {
+                    let nextString = '';
+                    for (const char of currentString) {
+                        nextString += rulesMap[char] || char;
+                    }
+                    currentString = nextString;
+                }
+                currentSystemString = currentString;
+                const displayString = currentSystemString.length > 5000 
+                    ? currentSystemString.substring(0, 5000) + '... (truncated)'
+                    : currentSystemString;
+                outputStringEl.textContent = displayString;
+            }
+            
+            // --- DRAWING LOGIC ---
+            function drawShape(command, turtle, params) {
+                ctx.save();
+                ctx.fillStyle = params.shapeColor;
+                const shapeSize = params.length * 1.5;
+
+                ctx.translate(turtle.x, turtle.y);
+                ctx.rotate(turtle.angle + Math.PI / 2); // Orient shape with turtle
+                
+                if (command === 'O') {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, shapeSize / 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else if (command === 'S') {
+                    ctx.fillRect(-shapeSize/2, -shapeSize/2, shapeSize, shapeSize);
+                } else if (command === 'T') {
+                    const h = (Math.sqrt(3)/2) * shapeSize;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -(2/3)*h);
+                    ctx.lineTo(-shapeSize/2, (1/3)*h);
+                    ctx.lineTo(shapeSize/2, (1/3)*h);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (command === 'D') {
+                    const d_half = shapeSize / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -d_half);
+                    ctx.lineTo(d_half, 0);
+                    ctx.lineTo(0, d_half);
+                    ctx.lineTo(-d_half, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (command === 'W') {
+                    const spikes = 5, r0 = shapeSize/2, r1 = shapeSize/4;
+                    let rot = Math.PI/2*3, x = 0, y = 0, step = Math.PI/spikes;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -r0);
+                    for (let i = 0; i < spikes; i++) {
+                        x = Math.cos(rot) * r0;
+                        y = Math.sin(rot) * r0;
+                        ctx.lineTo(x, y);
+                        rot += step;
+                        x = Math.cos(rot) * r1;
+                        y = Math.sin(rot) * r1;
+                        ctx.lineTo(x, y);
+                        rot += step;
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (command === 'L') {
+                    const leafLength = shapeSize * 1.2;
+                    const leafWidth = shapeSize / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.quadraticCurveTo(leafWidth, -leafLength / 2, 0, -leafLength);
+                    ctx.quadraticCurveTo(-leafWidth, -leafLength / 2, 0, 0);
+                    ctx.fill();
+                } else if (command === 'M') {
+                    const size = shapeSize;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(-size * 0.1, -size * 0.2);
+                    ctx.lineTo(-size * 0.4, -size * 0.3);
+                    ctx.lineTo(-size * 0.3, -size * 0.5);
+                    ctx.lineTo(-size * 0.5, -size * 0.6);
+                    ctx.lineTo(0, -size);
+                    ctx.lineTo(size * 0.5, -size * 0.6);
+                    ctx.lineTo(size * 0.3, -size * 0.5);
+                    ctx.lineTo(size * 0.4, -size * 0.3);
+                    ctx.lineTo(size * 0.1, -size * 0.2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            function drawLSystem(params) {
+                if (!currentSystemString) return;
+                lastDrawParams = params;
+                const { length, startX, startY, startAngle, turnAngle, lineColor, shapeColor } = params;
+                const stateStack = [];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+                let turtle = { x: startX, y: startY, angle: startAngle };
+                ctx.beginPath();
+                ctx.moveTo(turtle.x, turtle.y);
+
+                for (const command of currentSystemString) {
+                    switch (command) {
+                        case 'F': case 'G':
+                            turtle.x += length * Math.cos(turtle.angle);
+                            turtle.y += length * Math.sin(turtle.angle);
+                            ctx.lineTo(turtle.x, turtle.y);
+                            break;
+                        case 'f':
+                            turtle.x += length * Math.cos(turtle.angle);
+                            turtle.y += length * Math.sin(turtle.angle);
+                            ctx.moveTo(turtle.x, turtle.y);
+                            break;
+                        case '+': turtle.angle += turnAngle; break;
+                        case '-': turtle.angle -= turnAngle; break;
+                        case '[': stateStack.push({ ...turtle }); break;
+                        case ']':
+                            const poppedState = stateStack.pop();
+                            if (poppedState) {
+                                turtle = poppedState;
+                                ctx.moveTo(turtle.x, turtle.y);
+                            }
+                            break;
+                        case 'O': case 'S': case 'T': case 'D': case 'W': case 'L': case 'M':
+                            ctx.stroke(); // Stroke the path so far
+                            drawShape(command, turtle, params);
+                            ctx.beginPath(); // Start a new path
+                            ctx.moveTo(turtle.x, turtle.y);
+                            break;
+                    }
+                }
+                ctx.stroke(); // Stroke any remaining path
+            }
+            
+            // --- ANIMATION LOGIC ---
+            function stopAnimation() {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+            }
+
+            function animationLoop() {
+                let { turtle, stateStack, params, index, stepsPerFrame } = animationState;
+                
+                ctx.strokeStyle = params.lineColor;
+                ctx.fillStyle = params.shapeColor;
+
+                for (let i = 0; i < stepsPerFrame && index < currentSystemString.length; i++) {
+                    const command = currentSystemString[index];
+                    
+                    switch (command) {
+                        case 'F': case 'G':
+                            ctx.beginPath();
+                            ctx.moveTo(turtle.x, turtle.y);
+                            turtle.x += params.length * Math.cos(turtle.angle);
+                            turtle.y += params.length * Math.sin(turtle.angle);
+                            ctx.lineTo(turtle.x, turtle.y);
+                            ctx.stroke();
+                            break;
+                        case 'f':
+                            turtle.x += params.length * Math.cos(turtle.angle);
+                            turtle.y += params.length * Math.sin(turtle.angle);
+                            break;
+                        case '+': turtle.angle += params.turnAngle; break;
+                        case '-': turtle.angle -= params.turnAngle; break;
+                        case '[': stateStack.push({ ...turtle }); break;
+                        case ']':
+                            const poppedState = stateStack.pop();
+                            if (poppedState) turtle = poppedState;
+                            break;
+                        case 'O': case 'S': case 'T': case 'D': case 'W': case 'L': case 'M':
+                             drawShape(command, turtle, params);
+                             break;
+                    }
+                    index++;
+                }
+                
+                animationState.index = index;
+                animationState.turtle = turtle;
+                animationState.stateStack = stateStack;
+
+                if (index < currentSystemString.length) {
+                    animationFrameId = requestAnimationFrame(animationLoop);
+                } else {
+                    animationFrameId = null;
+                }
+            }
+
+            // --- FITTING LOGIC ---
+             function getDrawingBounds() {
+                if (!currentSystemString) return null;
+                const angle = parseInt(angleInput.value, 10) * (Math.PI / 180);
+                const length = 1;
+                const stateStack = [];
+                const startAngle = parseFloat(startAngleInput.value) * (Math.PI / 180);
+                let turtle = { x: 0, y: 0, angle: startAngle };
+                let bounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+                const shapeRadius = (1 * 1.5) / 2; // Normalized shape radius
+
+                for (const command of currentSystemString) {
+                    switch (command) {
+                        case 'F': case 'G':
+                            turtle.x += length * Math.cos(turtle.angle);
+                            turtle.y += length * Math.sin(turtle.angle);
+                            bounds.minX = Math.min(bounds.minX, turtle.x);
+                            bounds.maxX = Math.max(bounds.maxX, turtle.x);
+                            bounds.minY = Math.min(bounds.minY, turtle.y);
+                            bounds.maxY = Math.max(bounds.maxY, turtle.y);
+                            break;
+                        case 'f':
+                            turtle.x += length * Math.cos(turtle.angle);
+                            turtle.y += length * Math.sin(turtle.angle);
+                            break;
+                        case '+': turtle.angle += angle; break;
+                        case '-': turtle.angle -= angle; break;
+                        case '[': stateStack.push({ ...turtle }); break;
+                        case ']':
+                            const poppedState = stateStack.pop();
+                            if (poppedState) turtle = poppedState;
+                            break;
+                        case 'O': case 'S': case 'T': case 'D': case 'W': case 'L': case 'M':
+                             bounds.minX = Math.min(bounds.minX, turtle.x - shapeRadius);
+                             bounds.maxX = Math.max(bounds.maxX, turtle.x + shapeRadius);
+                             bounds.minY = Math.min(bounds.minY, turtle.y - shapeRadius);
+                             bounds.maxY = Math.max(bounds.maxY, turtle.y + shapeRadius);
+                             break;
+                    }
+                }
+                return bounds;
+            }
+            
+            function getFitParameters() {
+                const bounds = getDrawingBounds();
+                if (!bounds) return getDrawParameters();
+                
+                const drawingWidth = bounds.maxX - bounds.minX;
+                const drawingHeight = bounds.maxY - bounds.minY;
+                if (drawingWidth === 0 || drawingHeight === 0) return getDrawParameters();
+
+                const scaleX = canvas.width / drawingWidth;
+                const scaleY = canvas.height / drawingHeight;
+                const scale = Math.min(scaleX, scaleY) * 0.95;
+                const newLength = scale;
+                const newStartX = (canvas.width - (drawingWidth * scale)) / 2 - (bounds.minX * scale);
+                const newStartY = (canvas.height - (drawingHeight * scale)) / 2 - (bounds.minY * scale);
+                
+                const currentParams = getDrawParameters();
+                return {
+                    ...currentParams,
+                    length: newLength,
+                    startX: newStartX,
+                    startY: newStartY,
+                };
+            }
+
+            // --- Event Handlers ---
+            const getDrawParameters = () => ({
+                length: parseInt(lengthInput.value, 10),
+                startX: canvas.width * (parseFloat(startXInput.value) / 100),
+                startY: canvas.height * (parseFloat(startYInput.value) / 100),
+                startAngle: parseFloat(startAngleInput.value) * (Math.PI / 180),
+                turnAngle: parseInt(angleInput.value, 10) * (Math.PI / 180),
+                lineColor: lineColorInput.value,
+                shapeColor: shapeColorInput.value
+            });
+
+            drawBtn.addEventListener('click', () => {
+                stopAnimation();
+                generateLSystemString();
+                drawLSystem(getDrawParameters());
+            });
+
+            animateBtn.addEventListener('click', () => {
+                if (presetSelect.value === 'Fractal Plant') {
+                    plantPopup.classList.remove('hidden');
+                    plantPopup.classList.add('flex');
+                    return;
+                }
+
+                stopAnimation();
+                generateLSystemString();
+                if (!currentSystemString) return;
+
+                const params = getFitParameters();
+                const stepsPerFrame = parseInt(speedInput.value, 10);
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+
+                animationState = {
+                    turtle: { x: params.startX, y: params.startY, angle: params.startAngle },
+                    stateStack: [],
+                    params: params,
+                    index: 0,
+                    stepsPerFrame: stepsPerFrame
+                };
+
+                animationFrameId = requestAnimationFrame(animationLoop);
+            });
+
+            fitBtn.addEventListener('click', () => {
+                stopAnimation();
+                const params = getFitParameters();
+                drawLSystem(params);
+            });
+
+            clearBtn.addEventListener('click', () => {
+                stopAnimation();
+                currentSystemString = '';
+                lastDrawParams = {};
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                outputStringEl.textContent = 'Canvas cleared.';
+            });
+            
+            // --- Popup Handlers ---
+            popupTasksBtn.addEventListener('click', () => {
+                sessionStorage.setItem('hackathonProgress', '3');
+                window.location.href = './kwerky.html';
+            });
+
+            popupLsystemBtn.addEventListener('click', () => {
+                plantPopup.classList.add('hidden');
+                plantPopup.classList.remove('flex');
+            });
+
+
+            // --- UI Updaters ---
+            const setupSliderSync = (slider, numberInput) => {
+                slider.addEventListener('input', () => {
+                    numberInput.value = slider.value;
+                    if (slider.id !== 'speed') handleAutoGenerate();
+                });
+                numberInput.addEventListener('input', () => {
+                    slider.value = numberInput.value;
+                     if (slider.id !== 'speed') handleAutoGenerate();
+                });
+            };
+
+            setupSliderSync(iterationsInput, iterationsNumber);
+            setupSliderSync(angleInput, angleNumber);
+            setupSliderSync(lengthInput, lengthNumber);
+            setupSliderSync(speedInput, speedNumber);
+            
+            [startXInput, startYInput, startAngleInput, lineColorInput, shapeColorInput].forEach(input => {
+                input.addEventListener('input', handleAutoGenerate);
+            });
+            
+            startXInput.addEventListener('input', (e) => startXValue.textContent = e.target.value + '%');
+            startYInput.addEventListener('input', (e) => startYValue.textContent = e.target.value + '%');
+            startAngleInput.addEventListener('input', (e) => startAngleValue.textContent = e.target.value + '°');
+            
+            // --- Canvas Sizing ---
+            function resizeCanvas() {
+                const rect = canvasContainer.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                if (Object.keys(lastDrawParams).length > 0 && !animationFrameId) {
+                    drawLSystem(lastDrawParams); 
+                }
+            }
+            
+            const resizeObserver = new ResizeObserver(() => {
+                requestAnimationFrame(resizeCanvas);
+            });
+            resizeObserver.observe(canvasContainer);
+            
+            // --- PRESET LOGIC ---
+            function populatePresets() {
+                for (const name in presets) {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    presetSelect.appendChild(option);
+                }
+            }
+
+            function loadPreset(name) {
+                const preset = presets[name];
+                if (!preset) return;
+
+                // Update controls
+                iterationsInput.value = preset.iterations;
+                iterationsNumber.value = preset.iterations;
+                angleInput.value = preset.angle;
+                angleNumber.value = preset.angle;
+
+                // Update state
+                axiom = preset.axiom;
+                rules = Object.entries(preset.rules).map(([variable, body], index) => ({
+                    id: `preset-rule-${index}`,
+                    variable,
+                    body
+                }));
+                
+                renderSystem();
+
+                // Draw the new system without sound
+                generateLSystemString();
+                drawLSystem(getDrawParameters());
+            }
+
+            presetSelect.addEventListener('change', (e) => {
+                loadPreset(e.target.value);
+            });
+            
+            // --- Collapsible Sections ---
+            document.querySelectorAll('.collapsible-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const arrow = header.querySelector('.collapsible-arrow');
+                    if (content.style.display === 'block') {
+                        content.style.display = 'none';
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.style.display = 'block';
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            // --- Dark Mode ---
+            darkModeToggle.addEventListener('change', () => {
+                document.body.classList.toggle('dark');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+            });
+
+            // --- Initial Setup ---
+            function init() {
+                if (localStorage.getItem('darkMode') === 'true') {
+                    document.body.classList.add('dark');
+                    darkModeToggle.checked = true;
+                }
+                populatePresets();
+                presetSelect.value = 'Fractal Plant';
+                loadPreset('Fractal Plant');
+                resizeCanvas();
+            }
+            
+            init();
+        });
+    </script>
+</body>
+</html>

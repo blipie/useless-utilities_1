@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Runner - XP Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tahoma&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #3A6EA5; /* XP Bliss sky blue */
+        }
+        .xp-window {
+            background-color: #ECE9D8;
+            border: 1px solid #000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .title-bar {
+            background: linear-gradient(to bottom, #0055E7, #0047D5);
+            padding: 4px 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            cursor: default;
+        }
+        .window-buttons button {
+            width: 22px;
+            height: 20px;
+            border: 1px solid #fff;
+            background-color: #0055E7;
+            color: white;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            margin-left: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .window-buttons button.close {
+            background-color: #E81123;
+        }
+        .window-buttons button:hover {
+            filter: brightness(1.2);
+        }
+        .window-buttons button:active {
+            filter: brightness(0.9);
+        }
+        .xp-content {
+            padding: 1rem;
+        }
+        canvas {
+            background-color: #1a202c;
+            border: 1px inset #888;
+        }
+        .control-panel {
+            background-color: #ECE9D8;
+            padding-top: 1rem;
+        }
+        .xp-button, .xp-select, .xp-link-button {
+            background-color: #F0F0F0;
+            border: 1px solid #000;
+            border-style: outset;
+            padding: 6px 12px;
+            font-family: 'Tahoma', sans-serif;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .xp-button:active, .xp-link-button:active {
+            border-style: inset;
+        }
+        .xp-button:disabled {
+            color: #888;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen p-4">
+
+    <div class="xp-window w-full max-w-2xl">
+        <div class="title-bar">
+            <span>Maze Runner</span>
+            <div class="window-buttons flex">
+                <button aria-label="Minimize" onclick="playClickSound()">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 8H8V6H0V8Z" fill="white"/></svg>
+                </button>
+                <button aria-label="Maximize" onclick="playClickSound()">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 0H10V1H0V0ZM10 1V9H9V1H10ZM9 9H0V10H9V9ZM0 9V1H1V9H0Z" fill="white"/></svg>
+                </button>
+                <button class="close" aria-label="Close" onclick="playClickSound()">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 0L0 1L4 5L0 9L1 10L5 6L9 10L10 9L6 5L10 1L9 0L5 4L1 0Z" fill="white"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="xp-content">
+            <!-- Game Canvas -->
+            <div class="relative w-full aspect-[4/3]">
+                 <canvas id="game-canvas" class="w-full h-full"></canvas>
+            </div>
+
+            <!-- Controls -->
+            <div class="control-panel grid grid-cols-3 sm:grid-cols-6 gap-2 items-center">
+                <div id="timer" class="text-lg font-mono bg-white border border-gray-400 p-2 text-black text-center col-span-3 sm:col-span-2">
+                    0.00s
+                </div>
+                <select id="difficulty" onchange="playClickSound()" class="xp-select w-full col-span-3 sm:col-span-2">
+                    <option value="0">Easy</option>
+                    <option value="1">Standard</option>
+                    <option value="2">Hard</option>
+                </select>
+                <a href="/kwerky.html" onclick="playClickSound()" class="xp-link-button w-full" aria-label="Home">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 0 24 24" width="18px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg>
+                </a>
+                <button id="solution-button" onclick="playClickSound()" class="xp-button w-full">Solve</button>
+                <button id="pause-button" onclick="playClickSound()" class="xp-button w-full">Pause</button>
+                <button id="start-button" onclick="playClickSound()" class="xp-button w-full">Start</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Modal -->
+    <div id="win-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+        <div class="xp-window w-full max-w-md" id="win-modal-content">
+             <div class="title-bar">
+                <span>Success!</span>
+                <div class="window-buttons flex">
+                    <button id="win-modal-close-button" onclick="playClickSound()" class="close" aria-label="Close">
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 0L0 1L4 5L0 9L1 10L5 6L9 10L10 9L6 5L10 1L9 0L5 4L1 0Z" fill="white"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 text-center bg-gray-200 text-black">
+                <h2 class="text-2xl font-bold mb-2">You Win!</h2>
+                <p class="text-lg mb-2" id="final-time"></p>
+                <p class="text-sm mb-4 text-gray-600 hidden" id="previous-time"></p>
+                <div class="flex justify-center gap-4">
+                     <button id="play-same-maze-button" onclick="playClickSound()" class="xp-button">
+                        Play Same Maze
+                    </button>
+                    <button id="play-again-button" onclick="playClickSound()" class="xp-button">
+                        New Maze
+                    </button>
+                    <button id="complete-other-tasks-button" onclick="playClickSound()" class="hidden xp-button">
+                        Complete Other Tasks
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const timerEl = document.getElementById('timer');
+        const difficultySelect = document.getElementById('difficulty');
+        const startButton = document.getElementById('start-button');
+        const pauseButton = document.getElementById('pause-button');
+        const solutionButton = document.getElementById('solution-button');
+        const winModal = document.getElementById('win-modal');
+        const winModalContent = document.getElementById('win-modal-content');
+        const winModalCloseButton = document.getElementById('win-modal-close-button');
+        const finalTimeEl = document.getElementById('final-time');
+        const playAgainButton = document.getElementById('play-again-button');
+        const playSameMazeButton = document.getElementById('play-same-maze-button');
+        const previousTimeEl = document.getElementById('previous-time');
+        const completeOtherTasksButton = document.getElementById('complete-other-tasks-button');
+
+        // --- Game State ---
+        let maze, player, goal;
+        let lastGeneratedMaze = null;
+        let previousCompletionTime = null;
+        let activeCellSize = 20;
+        let mazeWidth, mazeHeight;
+        let gameState = 'waiting';
+        let bestSolutionPath = null;
+        let otherSolutionPaths = [];
+        
+        // --- Sound ---
+        let synth;
+        function playClickSound() {
+            // Check if audio context is ready (started by user gesture)
+            if (Tone.context.state !== 'running') {
+                Tone.context.resume();
+            }
+            // Create a synth if it doesn't exist
+            if (!synth) {
+                synth = new Tone.Synth().toDestination();
+            }
+            // Play a short, sharp note for the click sound
+            synth.triggerAttackRelease("G2", "16n");
+        }
+
+        // --- Timer State ---
+        let timerInterval;
+        let startTime;
+        let elapsedTime = 0;
+
+        // --- Player Physics ---
+        const playerProps = { vx: 0, vy: 0, speed: 0.3, maxSpeed: 3, friction: 0.95, color: '#38bdf8' };
+        const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+        // --- Event Listeners ---
+        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) { e.preventDefault(); if (gameState === 'playing') keys[e.key] = true; } });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) { e.preventDefault(); keys[e.key] = false; } });
+        startButton.addEventListener('click', () => { if (gameState === 'playing' || gameState === 'paused' || gameState === 'finished') { resetToWelcome(); } else { startGame(); } });
+        pauseButton.addEventListener('click', togglePause);
+        solutionButton.addEventListener('click', showSolution);
+        playAgainButton.addEventListener('click', resetToWelcome);
+        playSameMazeButton.addEventListener('click', restartSameMaze);
+        winModalCloseButton.addEventListener('click', hideWinModal);
+        completeOtherTasksButton.addEventListener('click', () => {
+            sessionStorage.setItem('hackathonProgress', '1');
+            window.location.href = './kwerky.html';
+        });
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Initial Setup ---
+        function initialize() {
+            resizeCanvas();
+            drawWelcomeMessage();
+            pauseButton.disabled = true;
+            solutionButton.disabled = true;
+        }
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            if (gameState !== 'waiting' && gameState !== 'generating') {
+                activeCellSize = Math.min(canvas.width / mazeWidth, canvas.height / mazeHeight);
+                draw();
+            } else {
+                drawWelcomeMessage();
+            }
+        }
+        
+        function drawWelcomeMessage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = `bold ${canvas.width / 25}px Inter`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Select difficulty and press Start!', canvas.width / 2, canvas.height / 2);
+        }
+        
+        function resetToWelcome() {
+            hideWinModal();
+            gameState = 'waiting';
+            startButton.textContent = 'Start';
+            difficultySelect.disabled = false;
+            pauseButton.disabled = true;
+            solutionButton.disabled = true;
+            bestSolutionPath = null;
+            otherSolutionPaths = [];
+            lastGeneratedMaze = null;
+            previousCompletionTime = null;
+            resetTimer();
+            drawWelcomeMessage();
+        }
+
+        function startGame() {
+            startButton.disabled = true;
+            difficultySelect.disabled = true;
+            startButton.textContent = '...';
+            gameState = 'generating';
+            bestSolutionPath = null;
+            otherSolutionPaths = [];
+            previousCompletionTime = null;
+            
+            setTimeout(() => {
+                const difficulty = difficultySelect.value;
+                if (difficulty === '0') { activeCellSize = 40; }
+                else if (difficulty === '1') { activeCellSize = 30; }
+                else { activeCellSize = 20; }
+
+                mazeWidth = Math.floor(canvas.width / activeCellSize);
+                mazeHeight = Math.floor(canvas.height / activeCellSize);
+                
+                if (difficulty === '2') { maze = generateWilsonsMaze(mazeWidth, mazeHeight, true); } // Pass true to make imperfect
+                else { maze = generateStandardMaze(mazeWidth, mazeHeight); }
+                
+                lastGeneratedMaze = JSON.parse(JSON.stringify(maze));
+
+                player = { x: activeCellSize / 2, y: activeCellSize / 2, ...playerProps, size: activeCellSize / 2.5 };
+                goal = { x: (mazeWidth - 1) * activeCellSize + activeCellSize / 2, y: (mazeHeight - 1) * activeCellSize + activeCellSize / 2, size: activeCellSize / 2, color: '#4ade80' };
+
+                resetTimer();
+                startTimer();
+                gameState = 'playing';
+                
+                startButton.disabled = false;
+                pauseButton.disabled = false;
+                solutionButton.disabled = false;
+                pauseButton.textContent = 'Pause';
+                startButton.textContent = 'Restart';
+                gameLoop();
+            }, 50);
+        }
+
+        function restartSameMaze() {
+            hideWinModal();
+            maze = JSON.parse(JSON.stringify(lastGeneratedMaze));
+            player = { x: activeCellSize / 2, y: activeCellSize / 2, ...playerProps, size: activeCellSize / 2.5 };
+            resetTimer();
+            startTimer();
+            gameState = 'playing';
+            pauseButton.disabled = false;
+            solutionButton.disabled = false;
+            bestSolutionPath = null;
+            otherSolutionPaths = [];
+            gameLoop();
+        }
+        
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                pauseTimer();
+                pauseButton.textContent = 'Resume';
+                drawPauseOverlay();
+            } else if (gameState === 'paused') {
+                gameState = 'playing';
+                startTimer();
+                pauseButton.textContent = 'Pause';
+                gameLoop();
+            }
+        }
+        
+        function showSolution() {
+            if (gameState !== 'playing' && gameState !== 'paused') return;
+            if (!bestSolutionPath) {
+                bestSolutionPath = findShortestSolution(maze);
+                if (difficultySelect.value === '2' && bestSolutionPath) { // Hard difficulty
+                    otherSolutionPaths = findAlternateSolutions(bestSolutionPath);
+                }
+            }
+            solutionButton.disabled = true;
+            draw();
+        }
+
+        // --- Maze Generation ---
+        function generateStandardMaze(width, height) {
+            let grid = Array.from({ length: height }, () => Array.from({ length: width }, () => ({ walls: { top: true, right: true, bottom: true, left: true }, visited: false })));
+            let stack = [], current = { x: 0, y: 0 };
+            grid[0][0].visited = true;
+            function findNewStart() { for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) if (!grid[y][x].visited) return { x, y }; return null; }
+            while (true) {
+                let { x, y } = current;
+                let neighbors = [];
+                if (y > 0 && !grid[y - 1][x].visited) neighbors.push({ x, y: y - 1, dir: 'top' });
+                if (x < width - 1 && !grid[y][x + 1].visited) neighbors.push({ x: x + 1, y, dir: 'right' });
+                if (y < height - 1 && !grid[y + 1][x].visited) neighbors.push({ x, y: y + 1, dir: 'bottom' });
+                if (x > 0 && !grid[y][x - 1].visited) neighbors.push({ x: x - 1, y, dir: 'left' });
+                if (neighbors.length > 0) {
+                    let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    stack.push(current);
+                    if (next.dir === 'top') { grid[y][x].walls.top = false; grid[next.y][next.x].walls.bottom = false; }
+                    else if (next.dir === 'right') { grid[y][x].walls.right = false; grid[next.y][next.x].walls.left = false; }
+                    else if (next.dir === 'bottom') { grid[y][x].walls.bottom = false; grid[next.y][next.x].walls.top = false; }
+                    else if (next.dir === 'left') { grid[y][x].walls.left = false; grid[next.y][next.x].walls.right = false; }
+                    current = { x: next.x, y: next.y };
+                    grid[current.y][current.x].visited = true;
+                } else if (stack.length > 0) {
+                    current = stack.pop();
+                } else {
+                    current = findNewStart();
+                    if (current === null) break;
+                    grid[current.y][current.x].visited = true;
+                }
+            }
+            return grid;
+        }
+
+        function generateWilsonsMaze(width, height, imperfect = false) {
+            let grid = Array.from({ length: height }, () => Array.from({ length: width }, () => ({ walls: { top: true, right: true, bottom: true, left: true }, inMaze: false })));
+            const unvisited = [];
+            for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) unvisited.push({ x, y });
+            const firstCell = unvisited.splice(Math.floor(Math.random() * unvisited.length), 1)[0];
+            grid[firstCell.y][firstCell.x].inMaze = true;
+            while (unvisited.length > 0) {
+                let current = unvisited[Math.floor(Math.random() * unvisited.length)];
+                let walkPath = [{...current}];
+                while (!grid[current.y][current.x].inMaze) {
+                    let neighbors = [];
+                    const { x, y } = current;
+                    if (y > 0) neighbors.push({ x, y: y - 1 });
+                    if (x < width - 1) neighbors.push({ x: x + 1, y });
+                    if (y < height - 1) neighbors.push({ x, y: y + 1 });
+                    if (x > 0) neighbors.push({ x: x - 1, y });
+                    const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    const existingIndex = walkPath.findIndex(p => p.x === next.x && p.y === next.y);
+                    if (existingIndex !== -1) {
+                        walkPath = walkPath.slice(0, existingIndex + 1);
+                    } else {
+                        walkPath.push(next);
+                    }
+                    current = next;
+                }
+                for (let i = 0; i < walkPath.length - 1; i++) {
+                    const p1 = walkPath[i], p2 = walkPath[i+1];
+                    if (p2.y < p1.y) { grid[p1.y][p1.x].walls.top = false; grid[p2.y][p2.x].walls.bottom = false; }
+                    else if (p2.x > p1.x) { grid[p1.y][p1.x].walls.right = false; grid[p2.y][p2.x].walls.left = false; }
+                    else if (p2.y > p1.y) { grid[p1.y][p1.x].walls.bottom = false; grid[p2.y][p2.x].walls.top = false; }
+                    else if (p2.x < p1.x) { grid[p1.y][p1.x].walls.left = false; grid[p2.y][p2.x].walls.right = false; }
+                }
+                for (const cell of walkPath) {
+                    grid[cell.y][cell.x].inMaze = true;
+                    const index = unvisited.findIndex(u => u.x === cell.x && u.y === cell.y);
+                    if (index !== -1) unvisited.splice(index, 1);
+                }
+            }
+            
+            if (imperfect) {
+                const wallsToRemove = Math.floor((width * height) / 10);
+                for (let i = 0; i < wallsToRemove; i++) {
+                    const x = Math.floor(Math.random() * (width - 2)) + 1;
+                    const y = Math.floor(Math.random() * (height - 2)) + 1;
+                    if (Math.random() > 0.5) { 
+                        if (grid[y][x].walls.right) { grid[y][x].walls.right = false; grid[y][x+1].walls.left = false; }
+                    } else {
+                        if (grid[y][x].walls.bottom) { grid[y][x].walls.bottom = false; grid[y+1][x].walls.top = false; }
+                    }
+                }
+            }
+            return grid;
+        }
+        
+        function findShortestSolution(mazeGrid) {
+            const startNode = { x: 0, y: 0, g: 0, h: 0, f: 0, parent: null };
+            const endNode = { x: mazeWidth - 1, y: mazeHeight - 1 };
+            let openSet = [startNode], closedSet = [];
+            function heuristic(a, b) { return Math.abs(a.x - b.x) + Math.abs(a.y - b.y); }
+            while(openSet.length > 0) {
+                let lowestIndex = 0;
+                for(let i = 0; i < openSet.length; i++) if(openSet[i].f < openSet[lowestIndex].f) lowestIndex = i;
+                let current = openSet[lowestIndex];
+                if(current.x === endNode.x && current.y === endNode.y) {
+                    let path = [];
+                    let temp = current;
+                    while(temp) { path.push(temp); temp = temp.parent; }
+                    return path.reverse();
+                }
+                openSet.splice(lowestIndex, 1);
+                closedSet.push(current);
+                let neighbors = [];
+                const {x, y} = current, cell = mazeGrid[y][x];
+                if(!cell.walls.top) neighbors.push({x, y: y - 1});
+                if(!cell.walls.right) neighbors.push({x: x + 1, y});
+                if(!cell.walls.bottom) neighbors.push({x, y: y + 1});
+                if(!cell.walls.left) neighbors.push({x: x - 1, y});
+                for(let neighbor of neighbors) {
+                    if(closedSet.find(node => node.x === neighbor.x && node.y === neighbor.y)) continue;
+                    let gScore = current.g + 1;
+                    let existingNode = openSet.find(node => node.x === neighbor.x && node.y === neighbor.y);
+                    if(!existingNode) {
+                        let newNode = { ...neighbor, g: gScore, h: heuristic(neighbor, endNode), f: gScore + heuristic(neighbor, endNode), parent: current };
+                        openSet.push(newNode);
+                    } else if (gScore < existingNode.g) {
+                        existingNode.g = gScore;
+                        existingNode.f = gScore + existingNode.h;
+                        existingNode.parent = current;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findAlternateSolutions(bestPath) {
+            const alternates = [];
+            const attempts = Math.min(bestPath.length, 15); // Try to find a few alternatives
+
+            for (let i = 0; i < attempts; i++) {
+                let tempMaze = JSON.parse(JSON.stringify(maze));
+                if (bestPath.length < 3) break;
+                const blockIndex = Math.floor(Math.random() * (bestPath.length - 2)) + 1;
+                const p1 = bestPath[blockIndex];
+                const p2 = bestPath[blockIndex + 1];
+
+                if (p2.y < p1.y) { tempMaze[p1.y][p1.x].walls.top = true; tempMaze[p2.y][p2.x].walls.bottom = true; }
+                else if (p2.x > p1.x) { tempMaze[p1.y][p1.x].walls.right = true; tempMaze[p2.y][p2.x].walls.left = true; }
+                else if (p2.y > p1.y) { tempMaze[p1.y][p1.x].walls.bottom = true; tempMaze[p2.y][p2.x].walls.top = true; }
+                else if (p2.x < p1.x) { tempMaze[p1.y][p1.x].walls.left = true; tempMaze[p2.y][p2.x].walls.right = true; }
+
+                const alternatePath = findShortestSolution(tempMaze);
+
+                if (alternatePath) {
+                     const pathString = JSON.stringify(alternatePath);
+                     if (pathString !== JSON.stringify(bestPath) && !alternates.some(p => JSON.stringify(p) === pathString)) {
+                         alternates.push(alternatePath);
+                     }
+                }
+            }
+            return alternates;
+        }
+
+        // --- Game Loop and Physics ---
+        function gameLoop() {
+            if (gameState !== 'playing') return;
+            updatePlayer();
+            draw();
+            checkWinCondition();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updatePlayer() {
+            if (keys.ArrowUp) player.vy -= player.speed;
+            if (keys.ArrowDown) player.vy += player.speed;
+            if (keys.ArrowLeft) player.vx -= player.speed;
+            if (keys.ArrowRight) player.vx += player.speed;
+            player.vy *= player.friction;
+            player.vx *= player.friction;
+            player.vx = Math.max(-player.maxSpeed, Math.min(player.maxSpeed, player.vx));
+            player.vy = Math.max(-player.maxSpeed, Math.min(player.maxSpeed, player.vy));
+            let nextX = player.x + player.vx;
+            let nextY = player.y + player.vy;
+            const r = player.size / 2;
+            let currentCellX = Math.floor(player.x / activeCellSize);
+            let currentCellY = Math.floor(player.y / activeCellSize);
+
+            if (player.vx > 0 && maze[currentCellY][currentCellX].walls.right && nextX + r > (currentCellX + 1) * activeCellSize) {
+                player.vx = 0;
+                nextX = (currentCellX + 1) * activeCellSize - r;
+            } else if (player.vx < 0 && maze[currentCellY][currentCellX].walls.left && nextX - r < currentCellX * activeCellSize) {
+                player.vx = 0;
+                nextX = currentCellX * activeCellSize + r;
+            }
+            if (player.vy > 0 && maze[currentCellY][currentCellX].walls.bottom && nextY + r > (currentCellY + 1) * activeCellSize) {
+                player.vy = 0;
+                nextY = (currentCellY + 1) * activeCellSize - r;
+            } else if (player.vy < 0 && maze[currentCellY][currentCellX].walls.top && nextY - r < currentCellY * activeCellSize) {
+                player.vy = 0;
+                nextY = currentCellY * activeCellSize + r;
+            }
+            player.x = nextX;
+            player.y = nextY;
+        }
+
+
+        function checkWinCondition() {
+            const dist = Math.hypot(player.x - goal.x, player.y - goal.y);
+            if (dist < player.size / 2 + goal.size / 2) {
+                gameState = 'finished';
+                stopTimer();
+
+                if (previousCompletionTime) {
+                    previousTimeEl.textContent = `Previous: ${(previousCompletionTime / 1000).toFixed(2)}s`;
+                    previousTimeEl.classList.remove('hidden');
+                } else {
+                    previousTimeEl.classList.add('hidden');
+                }
+                previousCompletionTime = elapsedTime;
+
+                if (difficultySelect.value === '0') { // Easy difficulty
+                    completeOtherTasksButton.classList.remove('hidden');
+                } else {
+                    completeOtherTasksButton.classList.add('hidden');
+                }
+                showWinModal();
+                pauseButton.disabled = true;
+                solutionButton.disabled = true;
+            }
+        }
+
+        // --- Drawing ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMaze();
+            if (otherSolutionPaths.length > 0) drawOtherSolutions();
+            if (bestSolutionPath) drawBestSolution();
+            drawGoal();
+            drawPlayer();
+        }
+
+        function drawPauseOverlay() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${canvas.width / 15}px Inter`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Paused', canvas.width / 2, canvas.height / 2);
+        }
+
+        function drawMaze() {
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let y = 0; y < mazeHeight; y++) {
+                for (let x = 0; x < mazeWidth; x++) {
+                    const cell = maze[y][x];
+                    const xPos = x * activeCellSize, yPos = y * activeCellSize;
+                    if (cell.walls.top) { ctx.moveTo(xPos, yPos); ctx.lineTo(xPos + activeCellSize, yPos); }
+                    if (cell.walls.right) { ctx.moveTo(xPos + activeCellSize, yPos); ctx.lineTo(xPos + activeCellSize, yPos + activeCellSize); }
+                    if (cell.walls.bottom) { ctx.moveTo(xPos + activeCellSize, yPos + activeCellSize); ctx.lineTo(xPos, yPos + activeCellSize); }
+                    if (cell.walls.left) { ctx.moveTo(xPos, yPos + activeCellSize); ctx.lineTo(xPos, yPos); }
+                }
+            }
+            ctx.stroke();
+        }
+        
+        function drawSolution(path, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = activeCellSize / 4;
+            ctx.beginPath();
+            for (let i = 0; i < path.length; i++) {
+                const x = path[i].x * activeCellSize + activeCellSize / 2;
+                const y = path[i].y * activeCellSize + activeCellSize / 2;
+                if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+            }
+            ctx.stroke();
+        }
+        
+        function drawBestSolution() {
+            drawSolution(bestSolutionPath, 'rgba(255, 255, 0, 0.7)');
+        }
+
+        function drawOtherSolutions() {
+            for(const path of otherSolutionPaths) {
+                drawSolution(path, 'rgba(255, 0, 0, 0.5)');
+            }
+        }
+
+        function drawPlayer() { ctx.fillStyle = player.color; ctx.beginPath(); ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2); ctx.fill(); }
+        function drawGoal() { ctx.fillStyle = goal.color; ctx.beginPath(); ctx.arc(goal.x, goal.y, goal.size, 0, Math.PI * 2); ctx.fill(); }
+
+        // --- Timer ---
+        function resetTimer() { clearInterval(timerInterval); elapsedTime = 0; timerEl.textContent = '0.00s'; }
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const currentSegmentTime = Date.now() - startTime;
+                const totalTime = elapsedTime + currentSegmentTime;
+                timerEl.textContent = `${(totalTime / 1000).toFixed(2)}s`;
+            }, 100);
+        }
+        function pauseTimer() { clearInterval(timerInterval); elapsedTime += Date.now() - startTime; }
+        function stopTimer() { clearInterval(timerInterval); elapsedTime += Date.now() - startTime; finalTimeEl.textContent = `Your time: ${(elapsedTime / 1000).toFixed(2)}s`; }
+
+        // --- Modal ---
+        function showWinModal() {
+            winModal.classList.remove('hidden');
+        }
+        function hideWinModal() {
+            winModal.classList.add('hidden');
+        }
+        
+        // --- Run on Load ---
+        initialize();
+
+    </script>
+</body>
+</html>

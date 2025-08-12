@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reward</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tahoma&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #3A6EA5; /* Classic XP Bliss Blue */
+            font-family: 'Tahoma', sans-serif;
+            overflow: hidden; /* Prevent scrollbars from the draggable windows */
+        }
+        
+        /* Draggable Window (XP Style) */
+        .xp-window {
+            position: absolute;
+            background-color: #ECE9D8;
+            border: 1px solid #000;
+            box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, 0 0 0 1px #878787, 3px 3px 8px rgba(0,0,0,0.4);
+            width: 400px; /* Standard width for all windows */
+            max-width: 90vw; /* Ensure window shrinks on smaller screens */
+            display: none; /* Initially hidden */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .xp-title-bar {
+            background: linear-gradient(to bottom, #0058d0, #004aa6);
+            color: white;
+            font-weight: bold;
+            padding: 3px 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            cursor: move; /* Cursor indicates the title bar is for dragging */
+            user-select: none;
+        }
+        .xp-title-bar-text::before {
+            content: '🖼️'; /* Image icon placeholder */
+            margin-right: 4px;
+        }
+        .xp-close-btn {
+            background-color: #e12626;
+            color: white;
+            border: 1px outset #fff;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+        }
+        .xp-content {
+            padding: 4px;
+        }
+        .xp-content img {
+            width: 100%;
+            height: auto; /* Allow height to adjust based on aspect ratio */
+            display: block;
+        }
+        .xp-popup-body {
+            padding: 20px;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Image Window 1 -->
+    <div class="xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Image1.jpg</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        <div class="xp-content">
+            <!-- IMAGE URL 1 GOES HERE -->
+            <img src="/pic_20250812120156_0.jpg" alt="Reward Image 1">
+        </div>
+    </div>
+
+    <!-- Image Window 2 -->
+    <div class="xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Image2.png</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        <div class="xp-content">
+            <!-- IMAGE URL 2 GOES HERE -->
+            <img src="/pic_20250812120156_1.jpg" alt="Reward Image 2">
+        </div>
+    </div>
+    
+    <!-- Image Window 3 -->
+    <div class="xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Image3.gif</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        <div class="xp-content">
+            <!-- IMAGE URL 3 GOES HERE -->
+            <img src="/pic_20250812120156_2.jpg" alt="Reward Image 3">
+        </div>
+    </div>
+
+    <!-- Image Window 4 -->
+    <div class="xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Image4.jpg</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        <div class="xp-content">
+            <!-- IMAGE URL 4 GOES HERE -->
+            <img src="/pic_20250812120156_3.jpg" alt="Reward Image 4">
+        </div>
+    </div>
+
+    <!-- Image Window 5 -->
+    <div class="xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Image5.png</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        <div class="xp-content">
+            <!-- IMAGE URL 5 GOES HERE -->
+            <img src="/pic_20250812120156_4.jpg" alt="Reward Image 5">
+        </div>
+    </div>
+
+    <!-- Image Window 6 -->
+    <div class="xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Image6.gif</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        <div class="xp-content">
+            <!-- IMAGE URL 6 GOES HERE -->
+            <img src="/pic_20250812120156_5.jpg" alt="Reward Image 6">
+        </div>
+    </div>
+
+    <!-- Image Window 7 -->
+    <div class="xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Image7.jpg</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        <div class="xp-content">
+            <!-- IMAGE URL 7 GOES HERE -->
+            <img src="/pic_20250812120156_6.jpg" alt="Reward Image 7">
+        </div>
+    </div>
+
+    <script>
+        const windows = document.querySelectorAll('.xp-window');
+
+        function showFinalPopup() {
+            const popup = document.createElement('div');
+            popup.className = 'xp-window';
+            popup.style.width = 'auto'; // Let the popup size itself
+            popup.style.top = '40%';
+            popup.style.left = '50%';
+            popup.style.transform = 'translate(-50%, -50%)';
+            popup.style.zIndex = '100'; // Ensure it's on top
+            popup.innerHTML = `
+                <div class="xp-title-bar">
+                    <span class="xp-title-bar-text">Kevin</span>
+                    <span class="xp-close-btn">X</span>
+                </div>
+                <div class="xp-popup-body">
+                    Thanks for playing ... feel free to look around your rewards. ^^
+                </div>
+            `;
+            document.body.appendChild(popup);
+            popup.style.display = 'block';
+            popup.style.opacity = '1';
+
+            makeDraggable(popup);
+        }
+
+        function showWindows() {
+            windows.forEach((win, index) => {
+                const img = win.querySelector('img');
+                
+                const positionAndShowWindow = () => {
+                    win.style.display = 'block';
+                    win.style.visibility = 'hidden';
+
+                    const winWidth = win.offsetWidth;
+                    const winHeight = win.offsetHeight;
+                    const screenWidth = window.innerWidth;
+                    const screenHeight = window.innerHeight;
+
+                    const maxLeft = screenWidth - winWidth - 10;
+                    const maxTop = screenHeight - winHeight - 10;
+
+                    win.style.left = `${Math.max(10, Math.random() * maxLeft)}px`;
+                    win.style.top = `${Math.max(10, Math.random() * maxTop)}px`;
+
+                    win.style.visibility = 'visible';
+                    win.style.opacity = '1';
+                };
+
+                setTimeout(() => {
+                    if (img.complete) {
+                        positionAndShowWindow();
+                    } else {
+                        img.onload = positionAndShowWindow;
+                        // Fallback for images that might fail to load
+                        img.onerror = positionAndShowWindow;
+                    }
+                }, index * 500);
+            });
+
+            setTimeout(showFinalPopup, windows.length * 500);
+        }
+
+        window.onload = showWindows;
+
+        function makeDraggable(win) {
+            const titleBar = win.querySelector('.xp-title-bar');
+            const closeBtn = win.querySelector('.xp-close-btn');
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            titleBar.addEventListener('mousedown', (e) => {
+                if (e.target === closeBtn) return;
+                isDragging = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+                
+                document.querySelectorAll('.xp-window').forEach(w => w.style.zIndex = '10');
+                win.style.zIndex = '20';
+            });
+
+            closeBtn.addEventListener('click', () => {
+                win.style.display = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    win.style.left = `${e.clientX - offsetX}px`;
+                    win.style.top = `${e.clientY - offsetY}px`;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        }
+
+        windows.forEach(makeDraggable);
+    </script>
+</body>
+</html>

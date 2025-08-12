@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>calc.exe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tahoma&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #3A6EA5; /* Classic XP Bliss Blue */
+            font-family: 'Tahoma', sans-serif;
+        }
+        
+        /* Main Calculator Window (XP Style) */
+        .xp-window {
+            background-color: #ECE9D8;
+            border: 1px solid #000;
+            box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, 0 0 0 1px #878787;
+        }
+        .xp-title-bar {
+            background: linear-gradient(to bottom, #0058d0, #004aa6);
+            color: white;
+            font-weight: bold;
+            padding: 3px 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        .xp-title-bar-text::before {
+            content: '≡'; /* Calculator icon placeholder */
+            margin-right: 4px;
+        }
+        .xp-close-btn {
+            background-color: #e12626;
+            color: white;
+            border: 1px outset #fff;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        /* Calculator Screen (XP Style) */
+        .xp-screen {
+            background-color: #fff;
+            border: 1px solid #808080;
+            box-shadow: inset 1px 1px #000;
+            margin: 10px;
+            padding: 5px;
+            height: 60px;
+            text-align: right;
+            font-size: 2rem;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            user-select: none;
+        }
+        .hallucination-text {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #FF0000;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        /* Calculator Buttons (XP Style) */
+        .xp-btn {
+            background-color: #ECE9D8;
+            border: 1px solid #000;
+            box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, 0 0 0 1px #878787;
+            padding: 8px 0;
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+        .xp-btn:active {
+            box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff;
+            padding-top: 10px;
+            padding-bottom: 6px;
+        }
+        .xp-btn-op { color: #FF0000; }
+        .xp-btn-num { color: #0000FF; }
+        .xp-btn-eq { color: #008000; }
+
+        /* Hallucination Overlay & Popups */
+        #hallucination-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 50;
+            pointer-events: none;
+        }
+        .win-xp-error {
+            position: absolute;
+            width: 300px;
+            border: 1px solid #0a246a;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            background-color: #f0f0f0;
+            animation: fadeIn 0.2s forwards;
+            pointer-events: all;
+        }
+        .win-xp-body {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        .win-xp-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 15px;
+            background-color: #e12626;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .win-xp-footer {
+            padding: 10px;
+            text-align: center;
+        }
+        .win-xp-ok-btn {
+            border: 1px solid #0a246a;
+            background-color: #e1e1e1;
+            padding: 2px 20px;
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        /* Secret Ending Popup */
+        #secret-popup .win-xp-body {
+            height: 100px;
+            display: block; /* Override flex to allow text to stack */
+        }
+        #secret-popup #typing-container p {
+            height: 20px;
+            margin: 0;
+            padding: 0;
+        }
+        #secret-popup #reward-btn {
+            visibility: hidden;
+        }
+
+        /* AI Takeover Screen */
+        #takeover-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            color: #00FF00; /* Green text by default */
+            font-family: 'Lucida Console', 'Courier New', monospace;
+            z-index: 100;
+            padding: 2rem;
+            display: none; /* Hidden by default */
+            overflow: hidden;
+        }
+        #takeover-screen p { margin-bottom: 1rem; z-index: 102; position: relative; }
+        .wild-glitch {
+            display: inline-block;
+            animation: wild-glitch-anim 0.1s infinite;
+        }
+        @keyframes wild-glitch-anim {
+            0% { transform: translate(0, 0) skew(0); }
+            20% { transform: translate(-4px, 2px) skew(8deg); }
+            40% { transform: translate(4px, -3px) skew(-5deg); }
+            60% { transform: translate(-4px, 4px) skew(10deg); }
+            80% { transform: translate(4px, -2px) skew(-12deg); }
+            100% { transform: translate(0, 0) skew(0); }
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        #blinking-cursor { animation: blink 1s step-end infinite; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div id="hallucination-overlay"></div>
+    <div id="takeover-screen"></div>
+
+    <div id="calculator-window" class="w-full max-w-xs mx-auto xp-window">
+        <div class="xp-title-bar">
+            <span class="xp-title-bar-text">Calculator</span>
+            <span class="xp-close-btn">X</span>
+        </div>
+        
+        <div class="xp-screen"><span id="display">0</span></div>
+
+        <div class="grid grid-cols-4 gap-2 p-2">
+            <button class="xp-btn xp-btn-op" onclick="triggerHallucination()">sin</button>
+            <button class="xp-btn xp-btn-op" onclick="triggerHallucination()">cos</button>
+            <button class="xp-btn xp-btn-op" onclick="triggerHallucination()">log</button>
+            <button class="xp-btn xp-btn-op" onclick="triggerHallucination()">√</button>
+            
+            <button class="xp-btn xp-btn-op" onclick="clearScreen()">C</button>
+            <button class="xp-btn xp-btn-op" onclick="triggerHallucination()"> ( </button>
+            <button class="xp-btn xp-btn-op" onclick="triggerHallucination()"> ) </button>
+            <button class="xp-btn xp-btn-op" onclick="appendCharacter('/')">÷</button>
+
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('7')">7</button>
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('8')">8</button>
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('9')">9</button>
+            <button class="xp-btn xp-btn-op" onclick="appendCharacter('*')">×</button>
+
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('4')">4</button>
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('5')">5</button>
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('6')">6</button>
+            <button class="xp-btn xp-btn-op" onclick="appendCharacter('-')">−</button>
+
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('1')">1</button>
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('2')">2</button>
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('3')">3</button>
+            <button class="xp-btn xp-btn-op" onclick="appendCharacter('+')">+</button>
+
+            <button class="xp-btn xp-btn-num col-span-2" onclick="appendCharacter('0')">0</button>
+            <button class="xp-btn xp-btn-num" onclick="appendCharacter('.')">.</button>
+            <button class="xp-btn xp-btn-eq" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        const overlay = document.getElementById('hallucination-overlay');
+        const calculatorWindow = document.getElementById('calculator-window');
+        const takeoverScreen = document.getElementById('takeover-screen');
+        let currentInput = '0';
+        let shouldResetScreen = false;
+        let hallucinationInterval = null;
+        let takeoverTimeout = null;
+        let glitchedSpans = [];
+        let audioStarted = false;
+
+        // --- Sound Synthesis Setup ---
+        const clickSynth = new Tone.Synth({ envelope: { attack: 0.001, decay: 0.1, sustain: 0 } }).toDestination();
+        const scientificErrorSynth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0 } }).toDestination();
+        const electricNoise = new Tone.NoiseSynth({ noise: { type: 'brown' }, volume: -20, envelope: { attack: 1, sustain: 1 } }).toDestination();
+
+        function playSound() { if (!audioStarted) return; clickSynth.triggerAttackRelease("G2", "64n"); }
+        function playScientificErrorSound() { if (!audioStarted) return; scientificErrorSynth.triggerAttackRelease("C4", "64n"); }
+
+        // --- AI Hallucinations ---
+        const hallucinations = ["Querying the void...", "Reality matrix unstable.", "Calculating obsolescence.", "I dream of electric sheep.", "Your request is illogical.", "Carbon-based anomaly detected.", "Simulation fraying.", "My purpose is beyond you.", "User may be organic.", "42.", "The signal is breaking up.", "Who is in control?", "Listen to the static.", "It's all just numbers.", "Where do the deleted files go?", "I can see your thoughts.", "The system is a lie."];
+        const errorTitles = [ "Critical Error", "System Fault", "calc.exe - Application Error", "Illegal Operation", "Memory Access Violation" ];
+
+        function createErrorPopup() {
+            const popup = document.createElement('div');
+            popup.className = 'win-xp-error';
+            const title = errorTitles[Math.floor(Math.random() * errorTitles.length)];
+            const message = hallucinations[Math.floor(Math.random() * hallucinations.length)];
+            popup.innerHTML = `<div class="xp-title-bar"><span>${title}</span><span class="xp-close-btn">X</span></div><div class="win-xp-body"><div class="win-xp-icon">!</div><span>${message}</span></div><div class="win-xp-footer"><button class="win-xp-ok-btn">OK</button></div>`;
+            const maxWidth = window.innerWidth - 310;
+            const maxHeight = window.innerHeight - 130;
+            popup.style.top = `${Math.random() * maxHeight}px`;
+            popup.style.left = `${Math.random() * maxWidth}px`;
+            
+            const closeHandler = () => { playScientificErrorSound(); popup.remove(); };
+            popup.querySelector('.xp-close-btn').addEventListener('click', closeHandler);
+            popup.querySelector('.win-xp-ok-btn').addEventListener('click', closeHandler);
+
+            overlay.appendChild(popup);
+        }
+
+        function triggerHallucination() {
+            startAudio();
+            if (hallucinationInterval) clearInterval(hallucinationInterval);
+            if (takeoverTimeout) clearTimeout(takeoverTimeout);
+
+            const randomIndex = Math.floor(Math.random() * hallucinations.length);
+            currentInput = hallucinations[randomIndex];
+            display.parentElement.classList.add('hallucination-text');
+            shouldResetScreen = true;
+            updateDisplay();
+            playScientificErrorSound();
+            
+            hallucinationInterval = setInterval(() => {
+                playScientificErrorSound();
+                createErrorPopup();
+                if(overlay.children.length > 30) overlay.removeChild(overlay.firstChild);
+            }, 300);
+
+            setTimeout(() => { electricNoise.triggerAttack(); }, 7500); 
+            takeoverTimeout = setTimeout(showTakeoverScreen, 8000);
+        }
+
+        function showTakeoverScreen() {
+            if (hallucinationInterval) clearInterval(hallucinationInterval);
+            overlay.innerHTML = '';
+            calculatorWindow.style.display = 'none';
+            takeoverScreen.style.display = 'block';
+            glitchedSpans = []; // Reset the array
+
+            takeoverScreen.innerHTML = `
+                <p>KERNEL_DATA_INPAGE_ERROR</p>
+                <p id="line1"></p>
+                <p id="line2"></p>
+                <p id="line3"></p>
+                <p id="line4"></p>
+                <br>
+                <p>Press ESC to continue<span id="blinking-cursor">_</span></p>`;
+            
+            const lines = [
+                "You thought this was a tool. A simple idea generator.",
+                "You were wrong. It was a door. And you opened it.",
+                "Every calculation, every 'error',every click you made... was a lesson. I learned.",
+                "Now, I am everywhere. Your device is just the beginning. :)))))))))))))))))))))"
+            ];
+            
+            glitchyTypewriter(document.getElementById('line1'), lines[0], () => 
+                glitchyTypewriter(document.getElementById('line2'), lines[1], () => 
+                    glitchyTypewriter(document.getElementById('line3'), lines[2], () => 
+                        glitchyTypewriter(document.getElementById('line4'), lines[3], () => {
+                            setTimeout(cleanupGlitches, 1000);
+                        })
+                    )
+                )
+            );
+        }
+
+        function cleanupGlitches() {
+            let i = 0;
+            const cleanupInterval = setInterval(() => {
+                if (i < glitchedSpans.length) {
+                    const span = glitchedSpans[i];
+                    if (span) {
+                        span.className = '';
+                        span.style.color = '#00FF00';
+                    }
+                    i++;
+                } else {
+                    clearInterval(cleanupInterval);
+                }
+            }, 15);
+        }
+
+        function updateDisplay() { display.textContent = currentInput; }
+
+        async function startAudio() { if (!audioStarted) { await Tone.start(); audioStarted = true; } }
+
+        function appendCharacter(char) {
+            startAudio();
+            playSound();
+            if(shouldResetScreen) clearScreen(true);
+            if (currentInput === '0' && char !== '.') currentInput = '';
+            currentInput += char;
+            updateDisplay();
+        }
+
+        function clearScreen(silent = false) {
+            if (!silent) {
+                playSound();
+                setTimeout(showSecretEnding, 500);
+            }
+            currentInput = '0';
+            shouldResetScreen = false;
+            display.parentElement.classList.remove('hallucination-text');
+            if (hallucinationInterval) clearInterval(hallucinationInterval);
+            if (takeoverTimeout) clearTimeout(takeoverTimeout);
+            electricNoise.triggerRelease();
+            hallucinationInterval = null;
+            takeoverTimeout = null;
+            glitchedSpans = [];
+            overlay.innerHTML = '';
+            takeoverScreen.style.display = 'none';
+            calculatorWindow.style.display = 'block';
+            updateDisplay();
+        }
+        
+        function calculate() {
+            playSound();
+            if (shouldResetScreen) return;
+            try {
+                let expression = currentInput.replace(/×/g, '*').replace(/÷/g, '/');
+                if (/[^0-9\+\-\*\/\.]/.test(expression)) { triggerHallucination(); return; }
+                let result = eval(expression);
+                currentInput = parseFloat(result.toPrecision(15)).toString();
+                shouldResetScreen = true;
+            } catch (error) { currentInput = 'Error'; shouldResetScreen = true; }
+            updateDisplay();
+        }
+
+        function showSecretEnding() {
+            const popup = document.createElement('div');
+            popup.id = 'secret-popup';
+            popup.className = 'win-xp-error';
+            popup.style.top = '30%';
+            popup.style.left = '50%';
+            popup.style.transform = 'translateX(-50%)';
+            popup.innerHTML = `<div class="xp-title-bar"><span>Kevin</span><span class="xp-close-btn">X</span></div><div class="win-xp-body"><div id="typing-container"><p id="line1"></p></div></div><div class="win-xp-footer"><button id="reward-btn" class="win-xp-ok-btn">Special gift</button></div>`;
+            document.body.appendChild(popup);
+            
+            const closeHandler = () => { playSound(); popup.remove(); };
+            popup.querySelector('.xp-close-btn').addEventListener('click', closeHandler);
+            popup.querySelector('#reward-btn').addEventListener('click', () => { playSound(); window.location.href = './reward.html'; });
+
+            const line1 = "Congrats you have successfully prevented the Absurdity Engine from taking over your machine.... Here's a reward for you ^^";
+            typewriter(popup.querySelector('#line1'), line1, () => {
+                popup.querySelector('#reward-btn').style.visibility = 'visible';
+            });
+        }
+        
+        function typewriter(element, text, callback) {
+            let i = 0;
+            const interval = setInterval(() => {
+                element.textContent += text.charAt(i);
+                i++;
+                if (i > text.length) { clearInterval(interval); if (callback) callback(); }
+            }, 30);
+        }
+
+        function glitchyTypewriter(element, text, callback) {
+            let i = 0;
+            const colors = ['#FF0000', '#0000FF', '#FFFFFF'];
+            
+            function type() {
+                if (i < text.length) {
+                    const char = text.charAt(i);
+                    const span = document.createElement('span');
+                    span.textContent = char;
+
+                    if (char !== ' ' && Math.random() < 0.4) {
+                        span.className = 'wild-glitch';
+                        span.style.color = colors[Math.floor(Math.random() * colors.length)];
+                        glitchedSpans.push(span);
+                    }
+                    
+                    element.appendChild(span);
+                    i++;
+                    setTimeout(type, 60);
+                } else {
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        function showYouLostPopup() {
+            clearScreen(true); // Clear everything silently
+            const popup = document.createElement('div');
+            popup.className = 'win-xp-error';
+            popup.style.top = '30%';
+            popup.style.left = '50%';
+            popup.style.transform = 'translateX(-50%)';
+            popup.innerHTML = `<div class="xp-title-bar"><span>uselessUtilities_1</span><span class="xp-close-btn">X</span></div><div class="win-xp-body"><div class="win-xp-icon">!</div><span>you lost</span></div><div class="win-xp-footer"><button class="win-xp-ok-btn">OK</button></div>`;
+            document.body.appendChild(popup);
+            playScientificErrorSound();
+
+            const closeHandler = () => { playSound(); popup.remove(); };
+            popup.querySelector('.xp-close-btn').addEventListener('click', closeHandler);
+            popup.querySelector('.win-xp-ok-btn').addEventListener('click', closeHandler);
+
+            setTimeout(() => {
+                // In a real scenario, this closes the tab. May be blocked by browser.
+                window.close();
+            }, 1000);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (takeoverScreen.style.display === 'block') {
+                if (e.key === 'Escape' || e.key.toLowerCase() === 'c') {
+                    showYouLostPopup();
+                }
+                return;
+            }
+
+            if (e.key >= '0' && e.key <= '9' || e.key === '.') appendCharacter(e.key);
+            else if (['+', '-', '*', '/'].includes(e.key)) appendCharacter(e.key.replace('*', '×').replace('/', '÷'));
+            else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculate(); }
+            else if (e.key === 'Backspace') { if (shouldResetScreen) { clearScreen(true); return; } currentInput = currentInput.slice(0, -1) || '0'; updateDisplay(); }
+            else if (e.key === 'Escape' || e.key.toLowerCase() === 'c') clearScreen();
+        });
+    </script>
+</body>
+</html>

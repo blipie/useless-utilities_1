@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KWERKY.AI - GBA Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen&family=Tahoma&display=swap" rel="stylesheet">
+    <style>
+        /* GBA-inspired aesthetic */
+        body {
+            font-family: 'Silkscreen', sans-serif;
+            background-color: #d1d5db; /* Light grey background */
+            color: #374151;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .font-press-start { font-family: 'Press Start 2P', cursive; }
+        .font-tahoma { font-family: 'Tahoma', sans-serif; }
+
+        /* The main GBA console body */
+        .gba-container {
+            background-color: #4f46e5; /* Indigo/Purple GBA color */
+            border-radius: 1rem 1rem 4rem 1rem;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2), inset 0 0 15px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #3b33b5;
+        }
+
+        /* The "screen" area */
+        .gba-screen {
+            background-color: #9ca3af; /* Screen background color */
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: inset 0 0 10px #374151;
+            border: 4px solid #1f2937;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Controls Area */
+        .gba-controls {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 1rem; user-select: none;
+        }
+
+        /* D-Pad styling */
+        .d-pad { position: relative; width: 90px; height: 90px; }
+        .d-pad .vertical, .d-pad .horizontal {
+            background-color: #1f2937; position: absolute;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: all 0.1s ease; pointer-events: none;
+        }
+        .d-pad .vertical.pressed, .d-pad .horizontal.pressed {
+            transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.4); background-color: #374151;
+        }
+        .d-pad .vertical { width: 30px; height: 90px; left: 30px; top: 0; border-radius: 6px; }
+        .d-pad .horizontal { width: 90px; height: 30px; left: 0; top: 30px; border-radius: 6px; }
+        .d-pad .up, .d-pad .down, .d-pad .left, .d-pad .right { position: absolute; cursor: pointer; z-index: 1; }
+        .d-pad .up { top: 0; left: 30px; width: 30px; height: 30px; }
+        .d-pad .down { bottom: 0; left: 30px; width: 30px; height: 30px; }
+        .d-pad .left { top: 30px; left: 0; width: 30px; height: 30px; }
+        .d-pad .right { top: 30px; right: 0; width: 30px; height: 30px; }
+
+        /* A and B buttons styling */
+        .ab-buttons { display: flex; gap: 1rem; }
+        .ab-buttons .button {
+            width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-family: 'Press Start 2P', cursive; color: rgba(255,255,255,0.7); font-size: 1.25rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3), inset 0 -4px 2px rgba(0,0,0,0.2);
+            border: 2px solid rgba(0,0,0,0.4); transition: all 0.1s ease; cursor: pointer;
+        }
+        .ab-buttons .button:active, .ab-buttons .button.pressed {
+            transform: translateY(2px); box-shadow: 0 2px 3px rgba(0,0,0,0.3), inset 0 -2px 1px rgba(0,0,0,0.2);
+        }
+        .button.a-button { background-color: #ef4444; }
+        .button.b-button { background-color: #22c55e; }
+        
+        /* Project card styling */
+        .project-card {
+            background-color: #e5e7eb; border: 3px solid #4b5563; border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out; cursor: pointer;
+        }
+        .project-card:hover:not(.locked) { transform: scale(1.03); }
+        .project-card.selected:not(.locked) {
+            border-color: #ef4444; transform: scale(1.05); box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+        .project-card.locked {
+            filter: grayscale(1); opacity: 0.6; cursor: not-allowed;
+        }
+        
+        /* Launch button styling */
+        .launch-button {
+            background-color: #374151; color: #e5e7eb; border: 3px solid #1f2937;
+            box-shadow: 0 4px 0 0 #111827; transition: all 0.1s ease-in-out;
+        }
+        .launch-button:hover:not(:disabled) { background-color: #4b5563; }
+        .launch-button:active:not(:disabled), .launch-button.pressed {
+            transform: translateY(4px); box-shadow: none;
+        }
+
+        /* XP Pop-up styles */
+        #xp-popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .xp-popup-window {
+            background-color: #ece9d8; border: 1px solid #0058e1; border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4); width: 90%; max-width: 450px;
+        }
+        .xp-popup-title-bar {
+            background: linear-gradient(to bottom, #0058e1, #0048c1); color: white;
+            padding: 4px 8px; font-weight: bold; border-top-left-radius: 5px; border-top-right-radius: 5px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .xp-popup-content { padding: 20px; font-size: 14px; line-height: 1.6; color: #000; }
+        .xp-popup-content p { margin-bottom: 12px; }
+        .xp-popup-footer { padding: 10px; text-align: center; background-color: #f0f0f0; border-top: 1px solid #ccc; }
+        .xp-popup-button {
+            font-family: 'Tahoma', sans-serif; background-color: #f0f0f0; border: 1px solid #707070;
+            padding: 4px 20px; border-radius: 3px; box-shadow: 1px 1px 1px #fff;
+        }
+        .xp-popup-button:active { border-style: inset; background-color: #e1e1e1; }
+        .xp-close-button {
+            background-color: #e12d33; color: white; border: 1px solid #fff;
+            border-right-color: #7f1d1d; border-bottom-color: #7f1d1d;
+            width: 20px; height: 20px; font-family: 'Tahoma', sans-serif;
+            font-weight: bold; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer;
+        }
+        .xp-close-button:active { background-color: #b92529; }
+    </style>
+</head>
+<body>
+    <div class="gba-container" tabindex="0">
+        <div class="gba-screen">
+            <header class="text-center mb-8">
+                <h1 class="font-press-start text-2xl sm:text-3xl text-gray-800 tracking-tighter">KWERKY.AI</h1>
+            </header>
+            <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="project-card p-4 flex flex-col" data-index="0">
+                    <h2 class="font-press-start text-lg text-indigo-700 mb-2">Maze Runner</h2>
+                    <p class="text-md mb-4 flex-grow">A digital labyrinth for humans. Can you find the exit faster than our AI?</p>
+                    <a href="./maze-runner.html" class="launch-button mt-auto w-full text-center font-press-start text-sm py-3 rounded-md">SELECT</a>
+                </div>
+                <div class="project-card p-4 flex flex-col" data-index="1">
+                    <h2 class="font-press-start text-lg text-indigo-700 mb-2">MemeForge</h2>
+                    <p class="text-md mb-4 flex-grow">Forge the dankest memes. A powerful tool for the modern digital blacksmith.</p>
+                    <a href="./meme-forge.html" class="launch-button mt-auto w-full text-center font-press-start text-sm py-3 rounded-md">SELECT</a>
+                </div>
+                <div class="project-card p-4 flex flex-col" data-index="2">
+                    <h2 class="font-press-start text-lg text-indigo-700 mb-2">Plant Gen</h2>
+                    <p class="text-md mb-4 flex-grow">Generate beautiful plant-like structures using L-System algorithms.</p>
+                    <a href="./plant-gen.html" class="launch-button mt-auto w-full text-center font-press-start text-sm py-3 rounded-md">SELECT</a>
+                </div>
+                <div class="project-card p-4 flex flex-col" data-index="3">
+                    <h2 class="font-press-start text-lg text-indigo-700 mb-2">AI SciCalc</h2>
+                    <p class="text-md mb-4 flex-grow">An AI-powered calculator that can solve any math problem in seconds.</p>
+                    <a href="./calculator.html" class="launch-button mt-auto w-full text-center font-press-start text-sm py-3 rounded-md">SELECT</a>
+                </div>
+            </main>
+        </div>
+        <div class="gba-controls">
+            <div class="d-pad">
+                <div class="vertical"></div><div class="horizontal"></div>
+                <div class="up" data-direction="up"></div><div class="down" data-direction="down"></div>
+                <div class="left" data-direction="left"></div><div class="right" data-direction="right"></div>
+            </div>
+            <div class="flex items-center">
+                <div class="text-center mr-8">
+                    <h3 class="font-press-start text-lg text-gray-300">HACKATHON</h3>
+                    <p class="font-silkscreen text-md text-gray-400">PROJECT SELECT</p>
+                </div>
+                <div class="ab-buttons">
+                    <div id="b-button" class="button b-button">B</div><div id="a-button" class="button a-button">A</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP Pop-up -->
+    <div id="xp-popup-overlay">
+        <div class="xp-popup-window font-tahoma">
+            <div class="xp-popup-title-bar">
+                <span id="xp-popup-title">System Message</span>
+                <button id="xp-popup-close" class="xp-close-button">X</button>
+            </div>
+            <div class="xp-popup-content">
+                <div id="xp-popup-text"></div>
+            </div>
+            <div class="xp-popup-footer">
+                <button id="xp-popup-ok" class="xp-popup-button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- SOUND PLAYER (Web Audio API) ---
+            const SoundPlayer = {
+                ctx: null,
+                sounds: {},
+                init() {
+                    if (this.ctx) return;
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                },
+                createSound(name, frequency, type, gainValue) {
+                    if (!this.ctx) return;
+                    this.sounds[name] = { frequency, type, gainValue };
+                },
+                play(name) {
+                    if (!this.ctx || !this.sounds[name]) return;
+                    const sound = this.sounds[name];
+                    const oscillator = this.ctx.createOscillator();
+                    const gainNode = this.ctx.createGain();
+                    oscillator.type = sound.type;
+                    oscillator.frequency.setValueAtTime(sound.frequency, this.ctx.currentTime);
+                    gainNode.gain.setValueAtTime(sound.gainValue, this.ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + 0.05);
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.ctx.destination);
+                    oscillator.start(this.ctx.currentTime);
+                    oscillator.stop(this.ctx.currentTime + 0.05);
+                }
+            };
+
+            // --- DOM ELEMENTS ---
+            const cards = Array.from(document.querySelectorAll('.project-card'));
+            const launchButtons = document.querySelectorAll('.launch-button');
+            const container = document.querySelector('.gba-container');
+            const dPadVertical = document.querySelector('.d-pad .vertical');
+            const dPadHorizontal = document.querySelector('.d-pad .horizontal');
+            const dPadButtons = document.querySelectorAll('.d-pad [data-direction]');
+            const popupOverlay = document.getElementById('xp-popup-overlay');
+            const popupTextElement = document.getElementById('xp-popup-text');
+            const popupOkButton = document.getElementById('xp-popup-ok');
+            const popupCloseButton = document.getElementById('xp-popup-close');
+
+            let currentIndex = -1;
+            let typingInterval;
+            let hasInteracted = false;
+
+            // --- PROGRESS & POP-UP CONTENT ---
+            const tasks = [
+                "1. Complete one game of Maze Runner on easy difficulty.",
+                "2. Create and export a meme of your choice.",
+                "3. Animate Fractal plant preset using L-system.",
+                "4. Calculate the value of: 69 - sin 30."
+            ];
+            const popups = {
+                initial: { title: "Hackathon Challenge", lines: ["To get your creative hackathon idea complete the following tasks in order:", ...tasks, "Good luck !  :)"] },
+                afterMaze: { title: "Task 1 Complete!", lines: ["Pending tasks:", tasks[1], tasks[2], tasks[3], "You're getting there ! :)"] },
+                afterMeme: { title: "Task 2 Complete!", lines: ["Pending tasks:", tasks[2], tasks[3], "Almost there ! :)"] },
+                afterPlant: { title: "Task 3 Complete!", lines: ["Pending tasks:", tasks[3], "Just one more.. You can do it ! :)"] }
+            };
+
+            // --- CORE FUNCTIONS ---
+            function typewriter(element, lines) {
+                clearInterval(typingInterval);
+                element.innerHTML = '';
+                let lineIndex = 0;
+                let charIndex = 0;
+                typingInterval = setInterval(() => {
+                    if (lineIndex < lines.length) {
+                        if (charIndex < lines[lineIndex].length) {
+                            element.innerHTML += lines[lineIndex].charAt(charIndex);
+                            //SoundPlayer.play('tick');
+                            charIndex++;
+                        } else {
+                            element.innerHTML += '<br>';
+                            lineIndex++;
+                            charIndex = 0;
+                        }
+                    } else {
+                        clearInterval(typingInterval);
+                    }
+                }, 50);
+            }
+
+            function showPopup({ title, lines }) {
+                firstInteraction(); // Ensure audio is ready before showing pop-up
+                document.getElementById('xp-popup-title').textContent = title;
+                popupOverlay.style.display = 'flex';
+                SoundPlayer.play('popup');
+                typewriter(popupTextElement, lines);
+            }
+            
+            function closePopup() {
+                 popupOverlay.style.display = 'none';
+                 clearInterval(typingInterval);
+            }
+
+            function unlockProjects(level) {
+                cards.forEach((card, index) => {
+                    const button = card.querySelector('a, button');
+                    if (index > level) {
+                        card.classList.add('locked');
+                        if (button) button.tabIndex = -1;
+                    } else {
+                        card.classList.remove('locked');
+                        if (button) button.tabIndex = 0;
+                    }
+                });
+            }
+
+            function selectCard(index) {
+                const card = cards[index];
+                if (!card || card.classList.contains('locked')) return;
+                const currentSelected = document.querySelector('.project-card.selected');
+                if (currentSelected) currentSelected.classList.remove('selected');
+                card.classList.add('selected');
+                currentIndex = index;
+            }
+            
+            function activateSelection() {
+                if (currentIndex === -1) return;
+                const selectedCard = cards[currentIndex];
+                if (selectedCard.classList.contains('locked')) return;
+                const actionButton = selectedCard.querySelector('a, button');
+                if (actionButton && !actionButton.disabled) {
+                    actionButton.classList.add('pressed');
+                    setTimeout(() => { window.location.href = actionButton.href; }, 150);
+                }
+            }
+
+            function handleAButtonPress() {
+                if (currentIndex === -1) {
+                    selectCard(0);
+                } else {
+                    activateSelection();
+                }
+            }
+
+            // --- INITIALIZATION & LOGIC ---
+            function init() {
+                let progress = parseInt(sessionStorage.getItem('hackathonProgress') || '0');
+                const referrer = document.referrer.toLowerCase();
+
+                if (referrer.includes('/maze-runner.html')) progress = Math.max(progress, 1);
+                if (referrer.includes('/meme-forge.html')) progress = Math.max(progress, 2);
+                if (referrer.includes('/plant-gen.html')) progress = Math.max(progress, 3);
+                sessionStorage.setItem('hackathonProgress', progress);
+
+                unlockProjects(progress);
+
+                setTimeout(() => {
+                    const hasSeenInitial = sessionStorage.getItem('seenInitialPopup');
+                    
+                    if (referrer.includes('/maze-runner.html')) {
+                        showPopup(popups.afterMaze);
+                    } else if (referrer.includes('/meme-forge.html')) {
+                        showPopup(popups.afterMeme);
+                    } else if (referrer.includes('/plant-gen.html')) {
+                        showPopup(popups.afterPlant);
+                    } else if (progress === 0 && !hasSeenInitial) {
+                        showPopup(popups.initial);
+                        sessionStorage.setItem('seenInitialPopup', 'true');
+                    }
+                }, 1000);
+            }
+
+            init();
+
+            // --- EVENT LISTENERS ---
+            function firstInteraction() {
+                if (hasInteracted) return;
+                SoundPlayer.init();
+                // Subtle typing sound
+                SoundPlayer.createSound('tick', 1200, 'square', 0.02);
+                // Noticeable pop-up sound
+                SoundPlayer.createSound('popup', 600, 'triangle', 0.1);
+                // Noticeable click sound
+                SoundPlayer.createSound('click', 880, 'sine', 0.12); 
+                hasInteracted = true;
+            }
+
+            popupOkButton.addEventListener('click', () => { firstInteraction(); SoundPlayer.play('click'); closePopup(); });
+            popupCloseButton.addEventListener('click', () => { firstInteraction(); SoundPlayer.play('click'); closePopup(); });
+
+            container.addEventListener('keydown', (e) => {
+                firstInteraction();
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'a', 'A', 'b', 'B'].includes(e.key)) {
+                    e.preventDefault();
+                    SoundPlayer.play('click');
+                }
+                
+                let newIndex = currentIndex;
+                if (currentIndex === -1) newIndex = 0;
+                else {
+                    if (e.key === 'ArrowRight') newIndex = (currentIndex + 1) % cards.length;
+                    if (e.key === 'ArrowLeft') newIndex = (currentIndex - 1 + cards.length) % cards.length;
+                }
+                if (['ArrowLeft', 'ArrowRight'].includes(e.key)) selectCard(newIndex);
+                
+                const keyMap = { ArrowUp: dPadVertical, ArrowDown: dPadVertical, ArrowLeft: dPadHorizontal, ArrowRight: dPadHorizontal };
+                if (keyMap[e.key]) keyMap[e.key].classList.add('pressed');
+                
+                if (['Enter', 'a', 'A'].includes(e.key)) {
+                    document.getElementById('a-button').classList.add('pressed');
+                    handleAButtonPress();
+                }
+                if (['Escape', 'b', 'B'].includes(e.key)) {
+                    document.getElementById('b-button').classList.add('pressed');
+                    selectCard(-1);
+                }
+            });
+            
+            container.addEventListener('keyup', (e) => {
+                const keyMap = { ArrowUp: dPadVertical, ArrowDown: dPadVertical, ArrowLeft: dPadHorizontal, ArrowRight: dPadHorizontal };
+                if (keyMap[e.key]) keyMap[e.key].classList.remove('pressed');
+                if (['Enter', 'a', 'A'].includes(e.key)) document.getElementById('a-button').classList.remove('pressed');
+                if (['Escape', 'b', 'B'].includes(e.key)) document.getElementById('b-button').classList.remove('pressed');
+            });
+
+            cards.forEach((card, index) => {
+                card.addEventListener('click', () => { 
+                    firstInteraction(); 
+                    SoundPlayer.play('click');
+                    selectCard(index); 
+                });
+            });
+
+            dPadButtons.forEach(button => {
+                const press = (e) => {
+                    firstInteraction();
+                    SoundPlayer.play('click');
+                    const targetBar = ['up', 'down'].includes(button.dataset.direction) ? dPadVertical : dPadHorizontal;
+                    targetBar.classList.add('pressed');
+                };
+                const release = (e) => {
+                    const targetBar = ['up', 'down'].includes(button.dataset.direction) ? dPadVertical : dPadHorizontal;
+                    targetBar.classList.remove('pressed');
+                };
+
+                button.addEventListener('mousedown', press);
+                button.addEventListener('mouseup', release);
+                button.addEventListener('mouseleave', release);
+                button.addEventListener('touchstart', press);
+                button.addEventListener('touchend', release);
+
+                button.addEventListener('click', () => {
+                    let newIndex = currentIndex === -1 ? 0 : currentIndex;
+                    if (button.dataset.direction === 'right') newIndex = (newIndex + 1) % cards.length;
+                    else if (button.dataset.direction === 'left') newIndex = (newIndex - 1 + cards.length) % cards.length;
+                    selectCard(newIndex);
+                });
+            });
+
+            launchButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    firstInteraction();
+                    SoundPlayer.play('click');
+                });
+            });
+
+            document.getElementById('a-button').addEventListener('click', () => { 
+                firstInteraction(); 
+                SoundPlayer.play('click');
+                handleAButtonPress(); 
+            });
+            document.getElementById('b-button').addEventListener('click', () => { 
+                firstInteraction(); 
+                SoundPlayer.play('click');
+                selectCard(-1); 
+            });
+            
+            container.focus();
+        });
+    </script>
+</body>
+</html>
