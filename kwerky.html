@@ -22,9 +22,9 @@
             min-height: 100vh;
             padding: 1rem;
         }
-
-        .font-press-start { font-family: 'Press Start 2P', cursive; }
-        .font-tahoma { font-family: 'Tahoma', sans-serif; }
+/* By adding !important, we ensure these font styles override any conflicting base styles from Tailwind. */
+.font-press-start { font-family: 'Press Start 2P', cursive !important; }
+.font-tahoma { font-family: 'Tahoma', sans-serif !important; }
 
         /* The main GBA console body */
         .gba-container {
@@ -478,4 +478,5 @@
     </script>
 </body>
 </html>
+
 
